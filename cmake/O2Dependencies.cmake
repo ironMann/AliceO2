@@ -75,6 +75,18 @@ endif()
 
 ########## Bucket definitions ############
 o2_define_bucket(
+    NAME
+    DataDistributionCommon_bucket
+
+    DEPENDENCIES
+    Headers
+    O2Device
+
+    INCLUDE_DIRECTORIES
+    ${CMAKE_SOURCE_DIR}/Utilities/DataDistribution/Common/include
+)
+
+o2_define_bucket(
   NAME
   glfw_bucket
 
