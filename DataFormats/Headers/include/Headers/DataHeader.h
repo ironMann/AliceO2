@@ -736,6 +736,12 @@ constexpr o2::header::DataDescription gDataDescriptionTracks{ "TRACKS" };
 constexpr o2::header::DataDescription gDataDescriptionConfig{ "CONFIGURATION" };
 constexpr o2::header::DataDescription gDataDescriptionInfo{ "INFORMATION" };
 constexpr o2::header::DataDescription gDataDescriptionROOTStreamers{ "ROOT STREAMERS" };
+
+constexpr o2::header::DataDescription gDataDescriptionSubTimeFrame{"SUBTIMEFRAME"};
+constexpr o2::header::DataDescription gDataDescriptionCruData{"CRUDATA"};
+constexpr o2::header::DataDescription gDataDescriptionCruLinkData{"CRULINKDATA"};
+constexpr o2::header::DataDescription gDataDescriptionBHFrame{"HBFRAME"};
+
 /// @} // end of doxygen group
 
 //__________________________________________________________________________________________________
