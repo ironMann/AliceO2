@@ -18,6 +18,10 @@
 
 #include <vector>
 
+#include <TApplication.h>
+#include <TCanvas.h>
+#include <TH1.h>
+
 namespace o2 {
 namespace DataDistribution {
 using namespace o2::Base;
@@ -200,6 +204,24 @@ private:
   std::size_t mIndex = 0;
   std::size_t mCount = 0;
 };
+
+
+
+
+class RootGui {
+private:
+  TApplication mApp;
+  TCanvas mCanvas;
+
+public:
+  RootGui(const std::string &pName, const std::string &pWindowName, const unsigned pW, const unsigned pH)
+  : mApp(pName.c_str(), nullptr, nullptr), mCanvas("cnv", pWindowName.c_str(), pW, pH) { }
+
+  TApplication& App() { return mApp; }
+  TCanvas& Canvas() { return mCanvas; }
+};
+
+
 }
 } /* namespace o2::DataDistribution */
 

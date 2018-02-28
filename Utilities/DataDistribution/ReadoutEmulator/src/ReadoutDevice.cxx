@@ -14,6 +14,8 @@
 #include <options/FairMQProgOptions.h>
 #include <FairMQLogger.h>
 
+#include <TH1.h>
+
 #include <chrono>
 #include <thread>
 
@@ -25,8 +27,6 @@ constexpr int gHbfOutputChanId = 0;
 ReadoutDevice::ReadoutDevice()
   : O2Device{},
     mCruMemoryHandler{ std::make_shared<CruMemoryHandler>() },
-    mRootApp("ReadoutApp", nullptr, nullptr),
-    mReadoutCanvas(),
     mFreeSuperpagesSamples(10000)
 {
 }
@@ -88,7 +88,7 @@ void ReadoutDevice::PreRun()
 
   // gui thread
   if (mBuildHistograms) {
-    mReadoutCanvas = std::make_unique<TCanvas>("cnv", "Readout", 500, 400);
+    mGui = std::make_unique<RootGui>("Emulator", "Readout Emulator", 500, 500);
     mGuiThread = std::thread(&ReadoutDevice::GuiThread, this);
   }
 }
@@ -165,11 +165,11 @@ void ReadoutDevice::GuiThread()
     for (const auto v : mFreeSuperpagesSamples)
       lFreeSuperpagesHist.Fill(v);
 
-    mReadoutCanvas->cd(1);
+    mGui->Canvas().cd(1);
     lFreeSuperpagesHist.Draw();
 
-    mReadoutCanvas->Modified();
-    mReadoutCanvas->Update();
+    mGui->Canvas().Modified();
+    mGui->Canvas().Update();
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(5s);

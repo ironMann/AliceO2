@@ -26,8 +26,7 @@ namespace DataDistribution {
 TfBuilderDevice::TfBuilderDevice()
 : O2Device{},
   mFlpInputHandler(*this),
-  mTfRootApp("TfBuilderApp", nullptr, nullptr),
-  mTfBuilderCanvas(nullptr),
+  mGui(nullptr),
   mTfSizeSamples(10000),
   mTfFreqSamples(10000)
 {
@@ -50,8 +49,8 @@ void TfBuilderDevice::PreRun()
   mFlpInputHandler.Start(mFlpNodeCount);
   // start the gui thread
   if (mBuildHistograms) {
-    mTfBuilderCanvas = std::make_unique<TCanvas>("cnv", "TF Builder", 1000, 500);
-    mTfBuilderCanvas->Divide(2, 1);
+    mGui = std::make_unique<RootGui>("TFBuilder", "TF Builder", 1000, 500);
+    mGui->Canvas().Divide(2, 1);
     mGuiThread = std::thread(&TfBuilderDevice::GuiThread, this);
   }
 }
@@ -117,7 +116,7 @@ void TfBuilderDevice::GuiThread()
     for (const auto v : mTfSizeSamples)
       lTfSizeHist.Fill(v);
 
-    mTfBuilderCanvas->cd(1);
+    mGui->Canvas().cd(1);
     lTfSizeHist.Draw();
 
     TH1F lTfFreqHist("TfFreq", "TimeFrame frequency", 200, 0.0, 100.0);
@@ -125,11 +124,11 @@ void TfBuilderDevice::GuiThread()
     for (const auto v : mTfFreqSamples)
       lTfFreqHist.Fill(v);
 
-    mTfBuilderCanvas->cd(2);
+    mGui->Canvas().cd(2);
     lTfFreqHist.Draw();
 
-    mTfBuilderCanvas->Modified();
-    mTfBuilderCanvas->Update();
+    mGui->Canvas().Modified();
+    mGui->Canvas().Update();
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(5s);

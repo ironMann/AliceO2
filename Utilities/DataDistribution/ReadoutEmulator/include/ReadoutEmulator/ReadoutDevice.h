@@ -22,10 +22,6 @@
 #include <deque>
 #include <condition_variable>
 
-#include <TApplication.h>
-#include <TCanvas.h>
-#include <TH1.h>
-
 namespace o2 {
 namespace DataDistribution {
 
@@ -80,8 +76,7 @@ protected:
 
   /// Observables
   bool mBuildHistograms = true;
-  TApplication mRootApp; // !?
-  std::unique_ptr<TCanvas> mReadoutCanvas;
+  std::unique_ptr<RootGui> mGui;
   std::thread mGuiThread;
 
   RunningSamples<uint64_t> mFreeSuperpagesSamples;
