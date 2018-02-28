@@ -33,8 +33,7 @@ constexpr int StfBuilderDevice::gStfOutputChanId;
 StfBuilderDevice::StfBuilderDevice()
   : O2Device{},
     mReadoutInterface(*this),
-    mStfRootApp("StfBuilderApp", nullptr, nullptr),
-    mStfBuilderCanvas(nullptr),
+    mGui(nullptr),
     mStfSizeSamples(10000),
     mStfFreqSamples(10000),
     mStfDataTimeSamples(10000)
@@ -68,8 +67,8 @@ void StfBuilderDevice::PreRun()
 
   // gui thread
   if (mBuildHistograms) {
-    mStfBuilderCanvas = std::make_unique<TCanvas>("cnv", "STF Builder", 1500, 500);
-    mStfBuilderCanvas->Divide(3, 1);
+    mGui = std::make_unique<RootGui>("STFBuilder", "STF Builder", 1500, 500);
+    mGui->Canvas().Divide(3, 1);
     mGuiThread = std::thread(&StfBuilderDevice::GuiThread, this);
   }
 }
@@ -194,7 +193,7 @@ void StfBuilderDevice::GuiThread()
     for (const auto v : mStfSizeSamples)
       lStfSizeHist.Fill(v);
 
-    mStfBuilderCanvas->cd(1);
+    mGui->Canvas().cd(1);
     lStfSizeHist.Draw();
 
     TH1F lStfFreqHist("STFFreq", "SubTimeFrame frequency", 200, 0.0, 100.0);
@@ -202,7 +201,7 @@ void StfBuilderDevice::GuiThread()
     for (const auto v : mStfFreqSamples)
       lStfFreqHist.Fill(v);
 
-    mStfBuilderCanvas->cd(2);
+    mGui->Canvas().cd(2);
     lStfFreqHist.Draw();
 
     TH1F lStfDataTimeHist("StfChanTimeH", "STF on-channel time", 200, 0.0, 30.0);
@@ -210,11 +209,11 @@ void StfBuilderDevice::GuiThread()
     for (const auto v : mStfDataTimeSamples)
       lStfDataTimeHist.Fill(v);
 
-    mStfBuilderCanvas->cd(3);
+    mGui->Canvas().cd(3);
     lStfDataTimeHist.Draw();
 
-    mStfBuilderCanvas->Modified();
-    mStfBuilderCanvas->Update();
+    mGui->Canvas().Modified();
+    mGui->Canvas().Update();
 
     using namespace std::chrono_literals;
     std::this_thread::sleep_for(5s);

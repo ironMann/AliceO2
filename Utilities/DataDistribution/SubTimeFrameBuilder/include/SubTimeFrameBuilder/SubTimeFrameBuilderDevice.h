@@ -82,8 +82,7 @@ protected:
 
   /// Root stuff
   bool mBuildHistograms = true;
-  TApplication mStfRootApp; // !?
-  std::unique_ptr<TCanvas> mStfBuilderCanvas;
+  std::unique_ptr<RootGui> mGui;
   std::thread mGuiThread;
 
   RunningSamples<uint64_t> mStfSizeSamples;
