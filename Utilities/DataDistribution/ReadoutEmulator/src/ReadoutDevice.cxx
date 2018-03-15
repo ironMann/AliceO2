@@ -29,6 +29,7 @@ ReadoutDevice::ReadoutDevice()
     mCruMemoryHandler{ std::make_shared<CruMemoryHandler>() },
     mFreeSuperpagesSamples(10000)
 {
+  mDataBlockMsgs.reserve(1024);
 }
 
 ReadoutDevice::~ReadoutDevice()
@@ -40,13 +41,13 @@ void ReadoutDevice::InitTask()
   mOutChannelName = GetConfig()->GetValue<std::string>(OptionKeyOutputChannelName);
   mDataRegionSize = GetConfig()->GetValue<std::size_t>(OptionKeyReadoutDataRegionSize);
 
-  mCruId = GetConfig()->GetValue<std::size_t>(OptionKeyCruId);
+  mLinkIdOffset = GetConfig()->GetValue<std::size_t>(OptionKeyLinkIdOffset);
 
   mSuperpageSize = GetConfig()->GetValue<std::size_t>(OptionKeyCruSuperpageSize);
   mDmaChunkSize = GetConfig()->GetValue<std::size_t>(OptionKeyCruDmaChunkSize);
 
   mCruLinkCount = GetConfig()->GetValue<std::size_t>(OptionKeyCruLinkCount);
-  mCruLinkBitsPerS = GetConfig()->GetValue<std::size_t>(OptionKeyCruLinkBitsPerS);
+  mCruLinkBitsPerS = GetConfig()->GetValue<double>(OptionKeyCruLinkBitsPerS);
 
   mBuildHistograms = GetConfig()->GetValue<bool>(OptionKeyGui);
 
@@ -77,7 +78,7 @@ void ReadoutDevice::InitTask()
 
   mCruLinks.clear();
   for (auto e = 0; e < mCruLinkCount; e++)
-    mCruLinks.push_back(std::make_unique<CruLinkEmulator>(mCruMemoryHandler, mCruLinkBitsPerS, mDmaChunkSize));
+    mCruLinks.push_back(std::make_unique<CruLinkEmulator>(mCruMemoryHandler, mLinkIdOffset + e, mCruLinkBitsPerS, mDmaChunkSize));
 }
 
 void ReadoutDevice::PreRun()
@@ -107,9 +108,11 @@ void ReadoutDevice::PostRun()
 
 bool ReadoutDevice::ConditionalRun()
 {
+  auto &lOutputChan = GetChannel(mOutChannelName, 0);
+
   // finish an STF every ~1/45 seconds
   static const auto cDataTakingStart = std::chrono::high_resolution_clock::now();
-  static const auto cStfInterval = std::chrono::microseconds(22222);
+  static constexpr auto cStfInterval = std::chrono::microseconds(22222);
   static uint64_t lNumberSentStfs = 0;
 
   auto isStfFinished =
@@ -138,9 +141,12 @@ bool ReadoutDevice::ConditionalRun()
   lHBFHeader.numberOfHBF = lCruLinkData.mLinkRawData.size();
   lHBFHeader.linkId = lCruLinkData.mLinkDataHeader.subSpecification;
 
-  auto lHdrMsg = NewMessageFor(mOutChannelName, 0, sizeof(ReadoutSubTimeframeHeader));
-  std::memcpy(lHdrMsg->GetData(), &lHBFHeader, sizeof(ReadoutSubTimeframeHeader));
-  Send(lHdrMsg, mOutChannelName, 0);
+  assert(mDataBlockMsgs.empty());
+  mDataBlockMsgs.reserve(lCruLinkData.mLinkRawData.size());
+
+  // create messages for the header
+  mDataBlockMsgs.emplace_back(std::move(lOutputChan.NewMessage(sizeof(ReadoutSubTimeframeHeader))));
+  std::memcpy(mDataBlockMsgs.front()->GetData(), &lHBFHeader, sizeof(ReadoutSubTimeframeHeader));
 
   // create messages for the data
   for (const auto& lDmaChunk : lCruLinkData.mLinkRawData) {
@@ -148,10 +154,17 @@ bool ReadoutDevice::ConditionalRun()
     mCruMemoryHandler->get_data_buffer(lDmaChunk.mDataPtr, lDmaChunk.mDataSize);
 
     // create a message out of unmanaged region
-    auto lDataMsg = NewMessageFor(mOutChannelName, 0, mDataRegion, lDmaChunk.mDataPtr, lDmaChunk.mDataSize);
-
-    Send(lDataMsg, mOutChannelName, 0);
+    mDataBlockMsgs.emplace_back(std::move(lOutputChan.NewMessage(mDataRegion, lDmaChunk.mDataPtr, lDmaChunk.mDataSize)));
   }
+
+#if USE_MULTIPART == 1
+  lOutputChan.Send(mDataBlockMsgs);
+#else /* one by one */
+  for (auto &lMsg : mDataBlockMsgs)
+    lOutputChan.Send(lMsg);
+#endif
+
+  mDataBlockMsgs.clear();
 
   return true;
 }
@@ -159,7 +172,7 @@ bool ReadoutDevice::ConditionalRun()
 void ReadoutDevice::GuiThread()
 {
   while (CheckCurrentState(RUNNING)) {
-    auto lHistTitle = "[Readout-" + std::to_string(mCruId) + "] Number of free superpages";
+    auto lHistTitle = "[Readout-" + std::to_string(mLinkIdOffset) + "] Number of free superpages";
     TH1F lFreeSuperpagesHist("SPCountH", lHistTitle.c_str(), 64, 0.0, mDataRegionSize / mSuperpageSize);
     lFreeSuperpagesHist.GetXaxis()->SetTitle("Count");
     for (const auto v : mFreeSuperpagesSamples)

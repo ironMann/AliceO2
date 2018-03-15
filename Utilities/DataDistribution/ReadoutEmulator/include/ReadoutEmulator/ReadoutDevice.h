@@ -31,7 +31,7 @@ public:
 
   static constexpr const char* OptionKeyReadoutDataRegionSize = "data-shm-region-size";
 
-  static constexpr const char* OptionKeyCruId = "cru-id";
+  static constexpr const char* OptionKeyLinkIdOffset = "link-id-offset";
 
   static constexpr const char* OptionKeyCruSuperpageSize = "cru-superpage-size";
   static constexpr const char* OptionKeyCruDmaChunkSize = "cru-dma-chunk-size";
@@ -63,7 +63,7 @@ protected:
   std::string mOutChannelName;
   std::size_t mDataRegionSize;
 
-  std::size_t mCruId;
+  std::size_t mLinkIdOffset;
 
   std::size_t mSuperpageSize;
   std::size_t mDmaChunkSize;
@@ -73,6 +73,9 @@ protected:
   std::shared_ptr<CruMemoryHandler> mCruMemoryHandler;
 
   std::vector<std::unique_ptr<CruLinkEmulator>> mCruLinks;
+
+  // messages to send
+  std::vector<FairMQMessagePtr> mDataBlockMsgs;
 
   /// Observables
   bool mBuildHistograms = true;

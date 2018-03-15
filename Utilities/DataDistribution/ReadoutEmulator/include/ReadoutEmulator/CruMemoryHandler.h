@@ -20,9 +20,13 @@
 #include <map>
 #include <vector>
 #include <queue>
+#include <iterator>
+
 #include <mutex>
 #include <condition_variable>
 #include <thread>
+
+#include <functional>
 
 class FairMQUnmanagedRegion;
 
@@ -65,6 +69,13 @@ public:
   // get a superpage from the free list
   bool getSuperpage(CRUSuperpage& sp);
 
+  // get number of superpages from the free list (perf)
+  template <class OutputIt>
+  unsigned long getSuperpages(unsigned long n, OutputIt spDst)
+  {
+    return mSuperpages.try_pop_n(n, spDst);
+  }
+
   // not useful
   void put_superpage(const char* spVirtAddr);
 
@@ -88,7 +99,7 @@ public:
     return mDataRegion->GetSize();
   }
 
-  // fifo of filled ReadoutLinkO2Data updates to be sent to STFBuilder (thread safe)
+  // FIFO of filled ReadoutLinkO2Data updates to be sent to STFBuilder (thread safe)
   // linkThread<1..N> -> queue -> mCruO2InterfaceThread
   void putLinkData(ReadoutLinkO2Data&& pLinkData)
   {
@@ -107,14 +118,27 @@ private:
   /// stack of free superpages
   ConcurrentLifo<CRUSuperpage> mSuperpages;
 
-  std::mutex mLock;
-  std::map<const char*, CRUSuperpage> mVirtToSuperpage;
-  // map<sp_address, map<buff_addr, buf_len>>
-  std::map<const char*, std::map<const char*, std::size_t>> mUsedSuperPages;
+  /// used buffers
+  /// split tracking for scalability into several buckets based on sp address
+  static constexpr unsigned long cBufferBucketSize = 127;
+
+  struct BufferBucket{
+    std::mutex mLock;
+    std::unordered_map<const char*, CRUSuperpage> mVirtToSuperpage;
+    // map<sp_address, map<buff_addr, buf_len>>
+    std::unordered_map<const char*, std::unordered_map<const char*, std::size_t>> mUsedSuperPages;
+  };
+
+  BufferBucket mBufferMap[cBufferBucketSize];
+
+  BufferBucket& getBufferBucket(const char *pAddr) {
+    return mBufferMap[std::hash<const char *>{}(pAddr) % cBufferBucketSize];
+  }
 
   /// output data queue
   ConcurrentFifo<ReadoutLinkO2Data> mO2LinkDataQueue;
 };
+
 }
 } /* namespace o2::DataDistribution */
 

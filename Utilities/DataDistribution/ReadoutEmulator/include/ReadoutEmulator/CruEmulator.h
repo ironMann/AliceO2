@@ -36,11 +36,10 @@ struct RawDmaChunkDesc {
 };
 
 class CruLinkEmulator {
-  static unsigned sCruUsedLinks; // keep track on already used link IDs
 public:
-  CruLinkEmulator(std::shared_ptr<CruMemoryHandler> pMemHandler, uint64_t pLinkBitsPerS, uint64_t pDmaChunkSize)
+  CruLinkEmulator(std::shared_ptr<CruMemoryHandler> pMemHandler, uint64_t pLinkId, uint64_t pLinkBitsPerS, uint64_t pDmaChunkSize)
     : mMemHandler{ pMemHandler },
-      mLinkID{ ++sCruUsedLinks },
+      mLinkID{ pLinkId },
       mLinkBitsPerS{ pLinkBitsPerS },
       mRunning{ false },
       mDmaChunkSize{ pDmaChunkSize }
@@ -62,7 +61,7 @@ public:
 private:
   std::shared_ptr<CruMemoryHandler> mMemHandler;
 
-  unsigned mLinkID;
+  std::uint64_t mLinkID;
   std::uint64_t mLinkBitsPerS;
   std::uint64_t mDmaChunkSize;
 

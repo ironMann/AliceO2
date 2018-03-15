@@ -28,7 +28,7 @@ public:
 
   StfSenderOutputInterface() = default;
   StfSenderOutputInterface(StfSenderDevice &pStfSenderDev)
-  : mDevice(pStfSenderDev) {}
+  : mDevice(pStfSenderDev) { }
 
   void Start(std::uint32_t pCnt);
   void Stop();
@@ -36,7 +36,7 @@ public:
   void DataHandlerThread(const std::uint32_t pEpnIdx);
 
   void PushStf(const std::uint32_t pEpnIdx, SubTimeFrame &&pStf) {
-    assert(pEpnIdx < mOutputThreads.size());
+    assert(pEpnIdx < mStfQueues.size());
     mStfQueues[pEpnIdx].push(std::move(pStf));
   }
 
@@ -48,7 +48,7 @@ private:
   std::vector<std::thread> mOutputThreads;
 
   /// Outstanding queues of STFs per EPN
-  std::map<std::uint32_t, ConcurrentFifo<SubTimeFrame> > mStfQueues;
+  std::vector<ConcurrentFifo<SubTimeFrame>> mStfQueues;
 };
 
 }

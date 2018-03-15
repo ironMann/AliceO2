@@ -2,7 +2,7 @@
 
 shmmonitor --cleanup
 
-EPN_CNT=3 # 0,1,2,or 3
+EPN_CNT=0 # 0,1,2,or 3
 
 chainConfig="@CMAKE_BINARY_DIR@/bin/config/readout-emu-flp-epn-chain.json"
 READOUT_CONFIG_EMU="@CMAKE_BINARY_DIR@/bin/config/readout_cfg/readout_emu.cfg"
@@ -13,14 +13,12 @@ READOUT="readout.exe"
 READOUT+=" file://$READOUT_CONFIG_EMU"
 
 STF_BUILDER="SubTimeFrameBuilderDevice"
-STF_BUILDER+=" --id stf_builder"
 STF_BUILDER+=" --transport shmem"
 STF_BUILDER+=" --mq-config $chainConfig"
 STF_BUILDER+=" --cru-count 1"
 STF_BUILDER+=" --io-threads $IO_THREADS"
 
 STF_SENDER="SubTimeFrameSenderDevice"
-STF_SENDER+=" --id stf_sender"
 STF_SENDER+=" --transport shmem"
 STF_SENDER+=" --mq-config $chainConfig"
 STF_SENDER+=" --epn-count $EPN_CNT"
@@ -35,21 +33,22 @@ TF_BUILDER+=" --io-threads $IO_THREADS"
 if [[ -z $USE_TMUX ]]; then
   # (EPN) Start TimeFrameBuilders
   if [[ $EPN_CNT -gt 0 ]]; then
-    xterm -geometry 90x20+1680+0 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0 &
+    xterm -geometry 90x20+1680+0 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0-0 &
   fi
   if [[ $EPN_CNT -gt 1 ]]; then
-    xterm -geometry 90x20+1680+300 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-1 &
+    xterm -geometry 90x20+1680+300 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0-1 &
   fi
   if [[ $EPN_CNT -gt 2 ]]; then
-    xterm -geometry 90x20+1680+600 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-2 &
+    xterm -geometry 90x20+1680+600 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0-2 &
   fi
 
   # (FLP) Start TimeFrameSender
-  xterm -geometry 90x57+1120+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_SENDER &
+  xterm -geometry 90x57+1120+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_SENDER --id stf_sender-0 &
 
   # (FLP) Start TimeFrameBuilder
-  xterm -geometry 90x57+560+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_BUILDER &
+  xterm -geometry 90x57+560+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_BUILDER --id stf_builder-0 &
 
+  sleep 1
   # (FLP) Start ReadoutEmulator
   xterm -geometry 90x57+0+0 -hold -e $READOUT &
 

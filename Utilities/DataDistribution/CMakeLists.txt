@@ -1,5 +1,5 @@
 # Remove when API stabilizes
-add_definitions(-DSHM_MULTIPART=1)
+add_definitions(-DUSE_MULTIPART=1)
 add_definitions(-DSTF_SERIALIZATION=1)
 
 add_subdirectory (Common)
@@ -9,6 +9,7 @@ add_subdirectory (SubTimeFrameSender)
 
 add_subdirectory (TimeFrameBuilder)
 
+
 # (FLP) Chain configuration and run script for Readout-Emulation mode (no CRU)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/run/startReadoutFLPChain.sh.in
                        ${CMAKE_BINARY_DIR}/bin/startReadoutFLPChain.sh)
@@ -16,10 +17,14 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/run/readout-flp-chain.json
                        ${CMAKE_BINARY_DIR}/bin/config/readout-flp-chain.json)
 
 # (FLP+EPN) Chain configuration and run script for Readout-Emulation mode (no CRU)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/run/start_Emulator-FLP-EPN.sh.in
-                       ${CMAKE_BINARY_DIR}/bin/start_Emulator-FLP-EPN.sh)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/run/readout-emu-flp-epn-chain.json
                        ${CMAKE_BINARY_DIR}/bin/config/readout-emu-flp-epn-chain.json)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/run/start_Emulator-FLP-EPN.sh.in
+                       ${CMAKE_BINARY_DIR}/bin/start_Emulator-FLP-EPN.sh)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/run/start_Emulator-3FLP-3EPN.sh.in
+                       ${CMAKE_BINARY_DIR}/bin/start_Emulator-3FLP-3EPN.sh)
 
 
 

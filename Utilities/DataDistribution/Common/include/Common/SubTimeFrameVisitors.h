@@ -32,7 +32,10 @@ namespace DataDistribution {
 class InterleavedHdrDataSerializer : public ISubTimeFrameVisitor {
 public:
   InterleavedHdrDataSerializer() = delete;
-  InterleavedHdrDataSerializer(const FairMQChannel& pChan) : mChan(pChan) { }
+  InterleavedHdrDataSerializer(const FairMQChannel& pChan) : mChan(pChan)
+  {
+    mMessages.reserve(1024);
+  }
 
   void serialize(SubTimeFrame&& pStf);
 
@@ -52,7 +55,9 @@ private:
 class InterleavedHdrDataDeserializer : public ISubTimeFrameVisitor {
 public:
   InterleavedHdrDataDeserializer() = delete;
-  InterleavedHdrDataDeserializer(const FairMQChannel& pChan) : mChan(pChan) { }
+  InterleavedHdrDataDeserializer(const FairMQChannel& pChan) : mChan(pChan)
+  {
+  }
 
   bool deserialize(SubTimeFrame& pStf);
 
@@ -61,7 +66,7 @@ protected:
   void visit(SubTimeFrame& pStf) override;
 
 private:
-  std::vector<FairMQMessagePtr> mMessages;
+  std::deque<FairMQMessagePtr> mMessages;
   const FairMQChannel& mChan;
 };
 
@@ -72,7 +77,11 @@ private:
 class HdrDataSerializer : public ISubTimeFrameVisitor {
 public:
   HdrDataSerializer() = delete;
-  HdrDataSerializer(const FairMQChannel& pChan) : mChan(pChan) { }
+  HdrDataSerializer(const FairMQChannel& pChan) : mChan(pChan)
+  {
+    mHeaderMessages.reserve(1024);
+    mDataMessages.reserve(1024);
+  }
 
   void serialize(SubTimeFrame &&pStf);
 
@@ -93,7 +102,9 @@ private:
 class HdrDataDeserializer : public ISubTimeFrameVisitor {
 public:
   HdrDataDeserializer() = delete;
-  HdrDataDeserializer(const FairMQChannel& pChan) : mChan(pChan) { }
+  HdrDataDeserializer(const FairMQChannel& pChan) : mChan(pChan)
+  {
+  }
 
   bool deserialize(SubTimeFrame& pStf);
 

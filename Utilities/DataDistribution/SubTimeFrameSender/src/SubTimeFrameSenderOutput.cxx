@@ -32,6 +32,10 @@ void StfSenderOutputInterface::Start(std::uint32_t pEpnCnt)
     return;
   }
 
+  // create thread queues
+  mStfQueues.clear();
+  mStfQueues = std::move(std::vector<ConcurrentFifo<SubTimeFrame>>(pEpnCnt));
+
   assert(mOutputThreads.size() == 0);
 
   for (std::uint32_t tid = 0; tid < pEpnCnt; tid++) // tid matches output channel index (EPN idx)
@@ -42,8 +46,8 @@ void StfSenderOutputInterface::Stop()
 {
   // Flush all queues
   for (auto &lIdQueue : mStfQueues) {
-    lIdQueue.second.flush();
-    lIdQueue.second.stop();
+    lIdQueue.flush();
+    lIdQueue.stop();
   }
 
   // wait for threads to exit
@@ -57,20 +61,11 @@ void StfSenderOutputInterface::Stop()
 /// Receiving thread
 void StfSenderOutputInterface::DataHandlerThread(const std::uint32_t pEpnIdx)
 {
-  auto &lStfQueue = mStfQueues[pEpnIdx];
   auto &lOutputChan = mDevice.GetChannel(mDevice.getOutputChannelName(), pEpnIdx);
 
   LOG(INFO) << "StfSenderOutput[" << pEpnIdx << "]: Starting the thread";
 
-  while (mDevice.CheckCurrentState(StfSenderDevice::RUNNING)) {
-
-    SubTimeFrame lStf;
-    if (!lStfQueue.pop(lStf)) {
-      LOG(INFO) << "StfSenderOutput[" << pEpnIdx << "]: STF queue drained";
-      break;
-    }
-
-    // Choose the serialization method
+  // Choose the serialization method
 #if STF_SERIALIZATION == 1
     InterleavedHdrDataSerializer lStfSerializer(lOutputChan);
 #elif STF_SERIALIZATION == 2
@@ -78,6 +73,16 @@ void StfSenderOutputInterface::DataHandlerThread(const std::uint32_t pEpnIdx)
 #else
 #error "Unknown STF_SERIALIZATION type"
 #endif
+
+  while (mDevice.CheckCurrentState(StfSenderDevice::RUNNING)) {
+
+    SubTimeFrame lStf;
+    if (!mStfQueues[pEpnIdx].pop(lStf)) {
+      LOG(INFO) << "StfSenderOutput[" << pEpnIdx << "]: STF queue drained";
+      break;
+    }
+
+    const TimeFrameIdType lStfId = lStf.Header().mId;
 
     try {
       lStfSerializer.serialize(std::move(lStf));

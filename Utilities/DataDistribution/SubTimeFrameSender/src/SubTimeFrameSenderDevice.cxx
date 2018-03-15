@@ -52,13 +52,9 @@ void StfSenderDevice::PostRun()
   LOG(INFO) << "PostRun done... ";
 }
 
-bool StfSenderDevice::ConditionalRun()
+void StfSenderDevice::Run()
 {
-
   auto &lInputChan = GetChannel(mInputChannelName, 0);
-
-  static auto sStartTime = std::chrono::high_resolution_clock::now();
-  SubTimeFrame lStf;
 
 #if STF_SERIALIZATION == 1
   InterleavedHdrDataDeserializer lStfReceiver(lInputChan);
@@ -68,26 +64,31 @@ bool StfSenderDevice::ConditionalRun()
 #error "Unknown STF_SERIALIZATION type"
 #endif
 
-  if (!lStfReceiver.deserialize(lStf)) {
-    LOG(WARN) << "Error while receiving of a STF. Exiting...";
-    return false;
+  while (CheckCurrentState(StfSenderDevice::RUNNING)) {
+
+    static auto sStartTime = std::chrono::high_resolution_clock::now();
+    SubTimeFrame lStf;
+
+    if (!lStfReceiver.deserialize(lStf)) {
+      LOG(WARN) << "Error while receiving a STF. Exiting...";
+      return;
+    }
+
+    const TimeFrameIdType lStfId = lStf.Header().mId;
+
+    { // is there a rate-limited LOG?
+      static unsigned long floodgate = 0;
+      if (++floodgate % 100 == 1)
+        LOG(DEBUG) << "TF[" << lStfId << "] size: " << lStf.getDataSize();
+    }
+
+    // Send STF to one of the EPNs (round-robin on STF ID)
+    if (mEpnNodeCount > 0) {
+      const auto lTargetEpn = lStfId % mEpnNodeCount;
+
+      mOutputHandler.PushStf(lTargetEpn, std::move(lStf));
+    }
   }
-
-
-  { // is there a rate-limited LOG?
-    static unsigned long floodgate = 0;
-    if (++floodgate % 100 == 1)
-      LOG(DEBUG) << "TF[" << lStf.Header().mId << "] size: " << lStf.getDataSize();
-  }
-
-  // Send STF to one of the EPNs (round-robin on STF ID)
-  if (mEpnNodeCount > 0) {
-    const auto lTargetEpn = lStf.Header().mId % mEpnNodeCount;
-
-    mOutputHandler.PushStf(lTargetEpn , std::move(lStf));
-  }
-
-  return true;
 }
 
 }
