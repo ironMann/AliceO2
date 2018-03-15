@@ -22,6 +22,53 @@
 namespace o2 {
 namespace DataDistribution {
 
+namespace impl {
+
+inline void SendMessages(const FairMQChannel &pChan, std::vector<FairMQMessagePtr> &pMessages) {
+
+#if USE_MULTIPART == 1
+
+  pChan.Send(pMessages);
+  pMessages.clear();
+#else /* send one-by-one */
+
+  for (auto& lMsg : pMessages)
+    pChan.Send(lMsg);
+
+  pMessages.clear();
+#endif
+}
+
+inline std::int64_t ReceiveMessages(FairMQMessagePtr &pMsg, const FairMQChannel &pChan, std::deque<FairMQMessagePtr> &pMessages) {
+
+#if USE_MULTIPART == 1
+  if (pMessages.empty()) {
+
+    std::vector<FairMQMessagePtr> lTmpMsgs;
+    lTmpMsgs.reserve(1024);
+
+    auto lRet = pChan.Receive(lTmpMsgs);
+    if (lRet < 0)
+      return lRet;
+
+    // move to the deque
+    std::move(std::begin(lTmpMsgs), std::end(lTmpMsgs), std::back_inserter(pMessages));
+  }
+
+  assert(!pMessages.empty());
+
+  pMsg = std::move(pMessages.front());
+  pMessages.erase(std::begin(pMessages));
+
+  return pMsg->GetSize();
+
+#else /* receive one-by-one */
+
+  return pChan.Receive(pMsg);
+#endif
+}
+
+}
 ////////////////////////////////////////////////////////////////////////////////
 /// InterleavedHdrDataSerializer
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,8 +107,7 @@ void InterleavedHdrDataSerializer::serialize(SubTimeFrame&& pStf)
 
   pStf.accept(*this);
 
-  for (auto& lMsg : mMessages)
-    mChan.Send(lMsg);
+  impl::SendMessages(mChan, mMessages);
 
   mMessages.clear();
 }
@@ -76,7 +122,7 @@ void InterleavedHdrDataDeserializer::visit(EquipmentHBFrames& pHBFrames)
   // header
   FairMQMessagePtr lHdrMsg = mChan.NewMessage();
 
-  if ((ret = mChan.Receive(lHdrMsg)) < 0)
+  if ((ret = impl::ReceiveMessages(lHdrMsg, mChan, mMessages)) < 0)
     throw std::runtime_error("Equipment header receive failed (err = " + std::to_string(ret) + ")");
 
   pHBFrames.mHeader = std::move(lHdrMsg);
@@ -85,7 +131,7 @@ void InterleavedHdrDataDeserializer::visit(EquipmentHBFrames& pHBFrames)
   for (size_t i = 0; i < pHBFrames.mHeader->payloadSize; i++) {
     FairMQMessagePtr lHbfMsg = mChan.NewMessage();
 
-    if ((ret = mChan.Receive(lHbfMsg)) < 0)
+    if ((ret = impl::ReceiveMessages(lHbfMsg, mChan, mMessages)) < 0)
       throw std::runtime_error("HBFrame receive failed (err = " + std::to_string(ret) + ")");
 
     pHBFrames.mHBFrames.emplace_back(std::move(lHbfMsg));
@@ -97,8 +143,7 @@ void InterleavedHdrDataDeserializer::visit(SubTimeFrame& pStf)
   int ret;
   // header
   FairMQMessagePtr lHdrMsg = mChan.NewMessage();
-
-  if ((ret = mChan.Receive(lHdrMsg)) < 0)
+  if ((ret = impl::ReceiveMessages(lHdrMsg, mChan, mMessages)) < 0)
     throw std::runtime_error("StfHeader receive failed (err = " + std::to_string(ret) + ")");
 
   pStf.mHeader = std::move(lHdrMsg);
@@ -114,6 +159,8 @@ void InterleavedHdrDataDeserializer::visit(SubTimeFrame& pStf)
 
 bool InterleavedHdrDataDeserializer::deserialize(SubTimeFrame& pStf)
 {
+  mMessages.clear();
+
   try
   {
     pStf.accept(*this);
@@ -128,6 +175,8 @@ bool InterleavedHdrDataDeserializer::deserialize(SubTimeFrame& pStf)
     LOG(ERROR) << "SubTimeFrame deserialization failed. Reason: " << e.what();
     return false;
   }
+
+  mMessages.clear();
 
   return true;
 }
@@ -164,8 +213,8 @@ void HdrDataSerializer::serialize(SubTimeFrame&& pStf)
   mHeaderMessages.clear();
   mDataMessages.clear();
   // add bookkeeping headers to mark how many messages are being sent
-  mHeaderMessages.push_back(std::move(mChan.NewMessage(sizeof(std::size_t))));
-  mDataMessages.push_back(std::move(mChan.NewMessage(sizeof(std::size_t))));
+  mHeaderMessages.emplace_back(std::move(mChan.NewMessage(sizeof(std::size_t))));
+  mDataMessages.emplace_back(std::move(mChan.NewMessage(sizeof(std::size_t))));
 
   // get messages
   pStf.accept(*this);
@@ -177,12 +226,9 @@ void HdrDataSerializer::serialize(SubTimeFrame&& pStf)
   memcpy(mDataMessages.front()->GetData(), &lDataCnt, sizeof(std::size_t));
 
   // send headers
-  for (auto& lMsg : mHeaderMessages)
-    mChan.Send(lMsg);
-
+  impl::SendMessages(mChan, mHeaderMessages);
   // send data
-  for (auto& lMsg : mDataMessages)
-    mChan.Send(lMsg);
+  impl::SendMessages(mChan, mDataMessages);
 
   mHeaderMessages.clear();
   mDataMessages.clear();
@@ -195,7 +241,7 @@ void HdrDataSerializer::serialize(SubTimeFrame&& pStf)
 void HdrDataDeserializer::visit(EquipmentHBFrames& pHBFrames)
 {
   pHBFrames.mHeader = std::move(mHeaderMessages.front());
-  mHeaderMessages.pop_front();
+  mHeaderMessages.erase(std::begin(mHeaderMessages));
 
   const auto lHBFramesCnt = pHBFrames.mHeader->payloadSize;
 
@@ -209,7 +255,7 @@ void HdrDataDeserializer::visit(EquipmentHBFrames& pHBFrames)
 void HdrDataDeserializer::visit(SubTimeFrame& pStf)
 {
   pStf.mHeader = std::move(mHeaderMessages.front());
-  mHeaderMessages.pop_front();
+  mHeaderMessages.erase(std::begin(mHeaderMessages));
 
   // iterate over all incoming HBFrame data sources
   for (size_t i = 0; i < pStf.mHeader->payloadSize; i++) {
@@ -233,36 +279,46 @@ bool HdrDataDeserializer::deserialize(SubTimeFrame& pStf)
     std::size_t lHdrCnt = 0;
     {
       FairMQMessagePtr lHdrCntMsg(mChan.NewMessage());
-      if ((ret = mChan.Receive(lHdrCntMsg)) < 0)
+      if ((ret = impl::ReceiveMessages(lHdrCntMsg, mChan, mHeaderMessages)) < 0)
         return false;
 
       memcpy(&lHdrCnt, lHdrCntMsg->GetData(), sizeof(std::size_t));
     }
 
-    for (size_t h = 0; h < lHdrCnt; h++) {
-      FairMQMessagePtr lHdrMsg(mChan.NewMessage());
-      if ((ret = mChan.Receive(lHdrMsg)) < 0)
-        return false;
+    if (mHeaderMessages.size() != lHdrCnt) {
+      assert(mHeaderMessages.size() == 0);
+      for (size_t h = 0; h < lHdrCnt; h++) {
+        FairMQMessagePtr lHdrMsg(mChan.NewMessage());
+        if ((ret = impl::ReceiveMessages(lHdrMsg, mChan, mHeaderMessages)) < 0)
+          return false;
 
-      mHeaderMessages.push_back(std::move(lHdrMsg));
+        mHeaderMessages.emplace_back(std::move(lHdrMsg));
+      }
+    } else {
+      assert(mHeaderMessages.size() == lHdrCnt);
     }
 
     // receive all data messages
     std::size_t lDataCnt = 0;
     {
       FairMQMessagePtr lDataCntMsg(mChan.NewMessage());
-      if ((ret = mChan.Receive(lDataCntMsg)) < 0)
+      if ((ret = impl::ReceiveMessages(lDataCntMsg, mChan, mDataMessages)) < 0)
         return false;
 
       memcpy(&lDataCnt, lDataCntMsg->GetData(), sizeof(std::size_t));
     }
 
-    for (size_t d = 0; d < lDataCnt; d++) {
-      FairMQMessagePtr lDataMsg(mChan.NewMessage());
-      if ((ret = mChan.Receive(lDataMsg)) < 0)
-        return false;
+    if (mDataMessages.size() != lDataCnt) {
+      assert(mDataMessages.size() == 0);
+      for (size_t d = 0; d < lDataCnt; d++) {
+        FairMQMessagePtr lDataMsg(mChan.NewMessage());
+        if ((ret = impl::ReceiveMessages(lDataMsg, mChan, mDataMessages)) < 0)
+          return false;
 
-      mDataMessages.push_back(std::move(lDataMsg));
+        mDataMessages.emplace_back(std::move(lDataMsg));
+      }
+    } else {
+      assert(mDataMessages.size() == lDataCnt);
     }
 
     // build the SubtimeFrame

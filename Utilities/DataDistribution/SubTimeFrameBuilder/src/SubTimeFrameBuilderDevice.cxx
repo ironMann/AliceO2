@@ -100,6 +100,15 @@ void StfBuilderDevice::StfOutputThread()
 {
   auto &lOutputChan = GetChannel(getOutputChannelName(), 0);
 
+  // Choose serialization method
+#if STF_SERIALIZATION == 1
+  InterleavedHdrDataSerializer lStfSerializer(lOutputChan);
+#elif STF_SERIALIZATION == 2
+  HdrDataSerializer lStfSerializer(lOutputChan);
+#else
+#error "Unknown STF_SERIALIZATION type"
+#endif
+
   while (CheckCurrentState(RUNNING)) {
     SubTimeFrame lStf;
 
@@ -115,16 +124,6 @@ void StfBuilderDevice::StfOutputThread()
         std::chrono::high_resolution_clock::now() - lFreqStartTime).count());
 
     const auto lStartTime = std::chrono::high_resolution_clock::now();
-
-    // Choose serialization method
-#if STF_SERIALIZATION == 1
-    InterleavedHdrDataSerializer lStfSerializer(lOutputChan);
-#elif STF_SERIALIZATION == 2
-    HdrDataSerializer lStfSerializer(lOutputChan);
-#else
-#error "Unknown STF_SERIALIZATION type"
-#endif
-
 
 #ifdef STF_FILTER_EXAMPLE
     // EXAMPLE:

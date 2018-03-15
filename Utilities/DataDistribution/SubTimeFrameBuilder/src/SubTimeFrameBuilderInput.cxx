@@ -17,8 +17,44 @@
 #include <FairMQStateMachine.h>
 #include <FairMQLogger.h>
 
+#include <vector>
+#include <queue>
+
 namespace o2 {
 namespace DataDistribution {
+
+namespace impl {
+
+static
+inline std::int64_t ReceiveMessages(FairMQMessagePtr &pMsg, const FairMQChannel &pChan, std::deque<FairMQMessagePtr> &pMessages) {
+
+#if USE_MULTIPART == 1
+  if (pMessages.empty()) {
+
+    std::vector<FairMQMessagePtr> lTmpMsgs;
+    lTmpMsgs.reserve(1024);
+
+    auto lRet = pChan.Receive(lTmpMsgs);
+    if (lRet < 0)
+      return lRet;
+
+    // move to the deque
+    std::move(std::begin(lTmpMsgs), std::end(lTmpMsgs), std::back_inserter(pMessages));
+  }
+
+  assert(!pMessages.empty());
+
+  pMsg = std::move(pMessages.front());
+  pMessages.erase(std::begin(pMessages));
+
+  return pMsg->GetSize();
+
+#else /* receive one-by-one */
+
+  return pChan.Receive(pMsg);
+#endif
+}
+} /*namespace impl*/
 
 void StfInputInterface::Start(unsigned pCnt)
 {
@@ -52,6 +88,8 @@ void StfInputInterface::DataHandlerThread(const unsigned pInputChannelIdx)
   ReadoutSubTimeframeHeader lReadoutHdr = { 0 };
   // Number of HBFrame messages to receive
   unsigned lHBFramesToReceive = 0;
+  std::deque<FairMQMessagePtr> lReadoutMsgs;
+
   // HBFrames collection
   std::vector<FairMQMessagePtr> lHBFrameMsgs;
   lHBFrameMsgs.reserve(1024);
@@ -64,7 +102,7 @@ void StfInputInterface::DataHandlerThread(const unsigned pInputChannelIdx)
       // receive channel object info
       FairMQMessagePtr lHdrMsg = lInputChan.NewMessage();
 
-      if ((ret = lInputChan.Receive(lHdrMsg)) < 0)
+      if ((ret = impl::ReceiveMessages(lHdrMsg, lInputChan, lReadoutMsgs)) < 0)
         throw std::runtime_error("StfHeader receive failed (err = " + std::to_string(ret) + ")");
 
       // Copy to avoid surprises. The receiving header is not O2 compatible and can be discarded
@@ -106,7 +144,7 @@ void StfInputInterface::DataHandlerThread(const unsigned pInputChannelIdx)
       while (lHBFramesToReceive > 0) {
 
         FairMQMessagePtr lHBFrameMsg = lInputChan.NewMessage();
-        if ((ret = lInputChan.Receive(lHBFrameMsg)) < 0)
+        if ((ret = impl::ReceiveMessages(lHBFrameMsg, lInputChan, lReadoutMsgs)) < 0)
           throw std::runtime_error("HBFrame receive failed (err = " + std::to_string(ret) + ")");
 
         lHBFrameMsgs.emplace_back(std::move(lHBFrameMsg));

@@ -42,7 +42,7 @@ public:
 protected:
   void PreRun() final;
   void PostRun() final;
-  bool ConditionalRun() final;
+  void Run() final;
 
   /// Configuration
   std::string mInputChannelName;

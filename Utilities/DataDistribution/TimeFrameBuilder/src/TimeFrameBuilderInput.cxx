@@ -111,7 +111,6 @@ void TfBuilderInput::DataHandlerThread(const std::uint32_t pFlpIndex)
   LOG(INFO) << "Exiting input thread[" << pFlpIndex << "]...";
 }
 
-
 /// STF->TF Merger thread
 void TfBuilderInput::StfMergerThread()
 {
@@ -120,24 +119,16 @@ void TfBuilderInput::StfMergerThread()
   while (mDevice.CheckCurrentState(TfBuilderDevice::RUNNING)) {
 
     std::unique_lock<std::mutex> lQueueLock(mStfMergerQueueLock);
-    if (std::cv_status::timeout == mStfMergerCondition.wait_for(lQueueLock, 500ms))
-      continue;
+    mStfMergerCondition.wait_for(lQueueLock, 500ms);
 
     // check the merge queue for partial TFs first
-    auto lStfBegin = mStfMergeQueue.begin();
-    // we should not be working on an empty queue
+    const SubTimeFrameIdType lTfId = mStfMergeQueue.begin()->first;
 
-    if (!mStfMergeQueue.empty())
-      assert(lStfBegin != std::end(mStfMergeQueue));
+    // Case 1: a full TF can be merged
+    if (mStfMergeQueue.count(lTfId) == mDevice.getFlpNodeCount()) {
 
-    const SubTimeFrameIdType lTfId = lStfBegin->first;
-    auto lStfRange = mStfMergeQueue.equal_range(lTfId);
-
-    // Case 1: the queue contains STF with two different IDs
-    // Case 2: a full TF can be merged
-    if (lStfRange.second != std::end(mStfMergeQueue) ||
-        mStfMergeQueue.count(lTfId) == mDevice.getFlpNodeCount()
-      ) {
+      auto lStfRange = mStfMergeQueue.equal_range(lTfId);
+      assert(std::distance(lStfRange.first, lStfRange.second) == mDevice.getFlpNodeCount());
 
       auto lStfCount = 1UL; // start from the first element
       SubTimeFrame lTf = std::move(lStfRange.first->second);
@@ -149,7 +140,7 @@ void TfBuilderInput::StfMergerThread()
       }
 
       if (lStfCount < mDevice.getFlpNodeCount())
-        LOG(WARN) << "STF MergerThread: merging incomplete TF[" << lStfCount << "]: contains "
+        LOG(WARN) << "STF MergerThread: merging incomplete TF[" << lTf.Header().mId << "]: contains "
                   << lStfCount << " instead of " << mDevice.getFlpNodeCount() << " SubTimeFrames";
 
       // remove consumed STFs from the merge queue
@@ -157,6 +148,16 @@ void TfBuilderInput::StfMergerThread()
 
       // Queue out the TF for consumption
       mDevice.QueueTf(std::move(lTf));
+
+    } else if (mStfMergeQueue.size() > (100 * mDevice.getFlpNodeCount())) {
+      // FIXME: for now, discard incomplete TFs
+      LOG(WARN) << "Unbounded merge queue size: " << mStfMergeQueue.size();
+
+      const auto lDroppedStfs = mStfMergeQueue.count(lTfId);
+
+      mStfMergeQueue.erase(lTfId);
+
+      LOG(WARN) << "Dropping oldest incomplete TF... (" << lDroppedStfs << " STFs)";
     }
 
   }

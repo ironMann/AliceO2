@@ -15,6 +15,7 @@
 #include <deque>
 #include <mutex>
 #include <condition_variable>
+#include <iterator>
 
 namespace o2 {
 namespace DataDistribution {
@@ -57,9 +58,9 @@ public:
     std::unique_lock<std::mutex> lLock(mLock);
 
     if (type == eFIFO)
-      mContainer.emplace_front(std::forward<Args>(args)...);
-    else if (type == eLIFO)
       mContainer.emplace_back(std::forward<Args>(args)...);
+    else if (type == eLIFO)
+      mContainer.emplace_front(std::forward<Args>(args)...);
 
     lLock.unlock(); // reduce contention
     mCond.notify_one();
@@ -80,6 +81,24 @@ public:
     return true;
   }
 
+  template <class OutputIt>
+  unsigned long pop_n(const unsigned long pCnt, OutputIt pDstIter)
+  {
+    std::unique_lock<std::mutex> lLock(mLock);
+    while (mContainer.empty() && mRunning)
+      mCond.wait(lLock);
+
+    if (!mRunning)
+      return false; // should stop
+
+    assert(!mContainer.empty());
+
+    unsigned long ret = std::min(mContainer.size(), pCnt);
+    std::move(std::begin(mContainer), std::begin(mContainer) + ret, pDstIter);
+    mContainer.erase(std::begin(mContainer), std::begin(mContainer) + ret);
+    return ret;
+  }
+
   bool try_pop(T& d)
   {
     std::unique_lock<std::mutex> lLock(mLock);
@@ -90,6 +109,21 @@ public:
     d = std::move(mContainer.front());
     mContainer.pop_front();
     return true;
+  }
+
+  template <class OutputIt>
+  unsigned long try_pop_n(const unsigned long pCnt, OutputIt pDstIter)
+  {
+    std::unique_lock<std::mutex> lLock(mLock);
+    if (mContainer.empty() || !mRunning)
+      return 0;
+
+    assert(!mContainer.empty());
+
+    unsigned long ret = std::min(mContainer.size(), pCnt);
+    std::move(std::begin(mContainer), std::begin(mContainer) + ret, pDstIter);
+    mContainer.erase(std::begin(mContainer), std::begin(mContainer) + ret);
+    return ret;
   }
 
   std::size_t size() const

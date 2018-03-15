@@ -29,13 +29,13 @@ void addCustomOptions(bpo::options_description& options)
     "Size of the data shm segment"
   )
   (
-    o2::DataDistribution::ReadoutDevice::OptionKeyCruId,
+    o2::DataDistribution::ReadoutDevice::OptionKeyLinkIdOffset,
     bpo::value<size_t>()->default_value(0),
-    "CRU ID within FLP. Starts at 0."
+    "Offset of CRU equipment ID. Starts at 0. (offset + #)"
   )
   (
     o2::DataDistribution::ReadoutDevice::OptionKeyCruSuperpageSize,
-    bpo::value<size_t>()->default_value(1ULL << 20 /* 1MiB */),
+    bpo::value<size_t>()->default_value(2ULL << 20 /* 2MiB */),
     "CRU DMA superpage size"
   )
   (
@@ -45,12 +45,12 @@ void addCustomOptions(bpo::options_description& options)
   )
   (
     o2::DataDistribution::ReadoutDevice::OptionKeyCruLinkCount,
-    bpo::value<uint64_t>()->default_value(24),
+    bpo::value<uint64_t>()->default_value(2),
     "Number of CRU links to emulate"
   )
   (
     o2::DataDistribution::ReadoutDevice::OptionKeyCruLinkBitsPerS,
-    bpo::value<uint64_t>()->default_value(1000000000),
+    bpo::value<double>()->default_value(1000000000),
     "Input throughput per link (bits per second)"
   )
   (

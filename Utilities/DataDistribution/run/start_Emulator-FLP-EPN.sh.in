@@ -3,7 +3,7 @@
 shmmonitor --cleanup
 
 STF_BLD_INPUT_CNT=1 # must be 1 for now
-EPN_CNT=3 # 0,1,2,or 3
+EPN_CNT=1 # 0,1,2,or 3
 
 
 # number of equipments (data sources) per CRU or in total in an FLP
@@ -12,7 +12,7 @@ EQUIPMENT_CNT=2
 # ThroughputPer of input streams (or CRU links). Specified in Gbits / s !
 # Max physical limit should ~5Gbit/s for TPC input link (~333 MB/STF/CRU)
 # This works as long as DMA_CHUNK_SIZE is set to 0 (see below)
-EQUIPMENT_BITS_PER_S=$((10 * 1000 * 1000 * 1000))
+EQUIPMENT_BITS_PER_S=$((5 * 1000 * 1000 * 1000))
 
 DATA_REGION_SIZE=$((4 * 1024 * 1024 * 1024))
 SUPERPAGE_SIZE=$((2 * 1024 * 1024))
@@ -37,7 +37,6 @@ READOUT+=" --cru-link-bits-per-s $EQUIPMENT_BITS_PER_S"
 READOUT+=" --io-threads $IO_THREADS"
 
 STF_BUILDER="SubTimeFrameBuilderDevice"
-STF_BUILDER+=" --id stf_builder"
 STF_BUILDER+=" --transport shmem"
 STF_BUILDER+=" --shm-monitor true"
 STF_BUILDER+=" --mq-config $chainConfig"
@@ -45,7 +44,6 @@ STF_BUILDER+=" --cru-count $STF_BLD_INPUT_CNT"
 STF_BUILDER+=" --io-threads $IO_THREADS"
 
 STF_SENDER="SubTimeFrameSenderDevice"
-STF_SENDER+=" --id stf_sender"
 STF_SENDER+=" --transport shmem"
 STF_SENDER+=" --shm-monitor true"
 STF_SENDER+=" --mq-config $chainConfig"
@@ -62,23 +60,23 @@ TF_BUILDER+=" --io-threads $IO_THREADS"
 if [[ -z $USE_TMUX ]]; then
   # (EPN) Start TimeFrameBuilders
   if [[ $EPN_CNT -gt 0 ]]; then
-    xterm -geometry 90x20+1680+0 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0 &
+    xterm -geometry 90x20+1680+0 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0-0 &
   fi
   if [[ $EPN_CNT -gt 1 ]]; then
-    xterm -geometry 90x20+1680+300 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-1 &
+    xterm -geometry 90x20+1680+300 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0-1 &
   fi
   if [[ $EPN_CNT -gt 2 ]]; then
-    xterm -geometry 90x20+1680+600 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-2 &
+    xterm -geometry 90x20+1680+600 -hold -e @CMAKE_BINARY_DIR@/bin/$TF_BUILDER --id tf_builder-0-2 &
   fi
 
   # (FLP) Start TimeFrameSender
-  xterm -geometry 90x57+1120+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_SENDER &
+  xterm -geometry 90x57+1120+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_SENDER --id stf_sender-0 &
 
   # (FLP) Start TimeFrameBuilder
-  xterm -geometry 90x57+560+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_BUILDER &
+  xterm -geometry 90x57+560+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_BUILDER --id stf_builder-0 &
 
-  # (FLP) Start ReadoutEmulator
-  xterm -geometry 90x57+0+0 -hold -e @CMAKE_BINARY_DIR@/bin/$READOUT --id readout-0 --cru-id 0 &
+  # (FLP) Start ReadoutEmulator1
+  xterm -geometry 90x57+0+0 -hold -e @CMAKE_BINARY_DIR@/bin/$READOUT --id readout-0 --cru-id 0 --session default &
 
 else
   # poor man's tmux environment cloning; make sure you're running tmux in control center (-CC) mode
