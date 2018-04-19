@@ -1,6 +1,15 @@
 # @author Gvozden Neskovic
 # @brief  DataDistribution common stuff: DataModel and Utilities
 
+o2_define_bucket(
+    NAME
+    DataDistributionCommon_bucket
+
+    DEPENDENCIES
+    FrameworkApplication_bucket
+)
+
+
 set(MODULE_NAME "DataDistributionCommon")
 set(MODULE_BUCKET_NAME DataDistributionCommon_bucket)
 
@@ -11,6 +20,7 @@ set(SRCS
     src/SubTimeFrameDataModel.cxx
     src/SubTimeFrameVisitors.cxx
     src/SubTimeFrameUtils.cxx
+    src/SubTimeFrameDplAdapter.cxx
   )
 
 set(LIBRARY_NAME ${MODULE_NAME})

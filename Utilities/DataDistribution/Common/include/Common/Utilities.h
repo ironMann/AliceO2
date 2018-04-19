@@ -79,6 +79,13 @@ public:
     return reinterpret_cast<pointer>(lAddr);
   }
 
+  pointer release() noexcept
+  {
+    pointer lPtr = get();
+    std::exchange(mMessage, nullptr);
+    return lPtr;
+  }
+
   reference operator*() const noexcept
   {
     assert(get() != nullptr);
@@ -106,11 +113,13 @@ public:
     return std::exchange(mMessage, nullptr);
   }
 
+
+
 private:
   ChannelPtr(FairMQMessagePtr& m) : mMessage(std::move(m))
   {
   }
-  FairMQMessagePtr mMessage;
+  FairMQMessagePtr mMessage = nullptr;
 };
 
 class ChannelAllocator {

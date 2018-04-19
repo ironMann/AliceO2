@@ -57,7 +57,7 @@ void StfSenderDevice::Run()
   auto &lInputChan = GetChannel(mInputChannelName, 0);
 
 #if STF_SERIALIZATION == 1
-  InterleavedHdrDataDeserializer lStfReceiver(lInputChan);
+  InterleavedHdrDataDeserializer lStfReceiver;
 #elif STF_SERIALIZATION == 2
   HdrDataDeserializer lStfReceiver(lInputChan);
 #else
@@ -69,7 +69,7 @@ void StfSenderDevice::Run()
     static auto sStartTime = std::chrono::high_resolution_clock::now();
     SubTimeFrame lStf;
 
-    if (!lStfReceiver.deserialize(lStf)) {
+    if (!lStfReceiver.deserialize(lStf, lInputChan)) {
       LOG(WARN) << "Error while receiving a STF. Exiting...";
       return;
     }

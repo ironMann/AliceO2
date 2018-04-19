@@ -21,6 +21,8 @@ namespace o2 {
 namespace framework {
   using InjectorFunction = std::function<void(FairMQDevice &device, FairMQParts& inputs, int index)>;
 
+  void broadcastMessage(FairMQDevice &device, o2::header::Stack &&headerStack, FairMQMessagePtr &&payloadMessage, int index);
+
   /// Helper function which takes a set of inputs coming from a device,
   /// massages them so that they are valid DPL messages using @param spec as header
   /// and sends them to the downstream components.
@@ -35,13 +37,13 @@ namespace framework {
   /// The default connection method for the custom source
   static auto gDefaultConverter = incrementalConverter(OutputSpec{"TST", "TEST",0}, 0, 1);
 
-  /// Create a DataProcessorSpec which can be used to inject 
+  /// Create a DataProcessorSpec which can be used to inject
   /// messages in the DPL.
   /// @param label is the label of the DataProcessorSpec associated.
   /// @param outputs is the type of messages which this source produces.
   /// @param channelConfig is string to be passed to fairmq to create the device.
   ///        notice that the name of the device will be the same as the label.
-  /// @param converter is a lambda to be invoked to convert @a inputs into 
+  /// @param converter is a lambda to be invoked to convert @a inputs into
   ///        messages of the DPL. By default @a incrementalConverter is used
   ///        which attaches to each @input FairMQPart a DataProcessingHeader
   ///        with an incremental number as start time.

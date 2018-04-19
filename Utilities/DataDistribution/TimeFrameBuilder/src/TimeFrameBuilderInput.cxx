@@ -74,7 +74,7 @@ void TfBuilderInput::DataHandlerThread(const std::uint32_t pFlpIndex)
 
   // receive a STF
 #if STF_SERIALIZATION == 1
-  InterleavedHdrDataDeserializer lStfReceiver(lInputChan);
+  InterleavedHdrDataDeserializer lStfReceiver;
 #elif STF_SERIALIZATION == 2
   HdrDataDeserializer lStfReceiver(lInputChan);
 #else
@@ -85,7 +85,7 @@ void TfBuilderInput::DataHandlerThread(const std::uint32_t pFlpIndex)
 
     SubTimeFrame lStf;
 
-    if (!lStfReceiver.deserialize(lStf)) {
+    if (!lStfReceiver.deserialize(lStf, lInputChan)) {
       if (mDevice.CheckCurrentState(TfBuilderDevice::RUNNING))
         LOG(WARN) << "InputThread[" << pFlpIndex << "]: Receive failed";
       else

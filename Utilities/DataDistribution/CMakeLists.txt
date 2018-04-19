@@ -1,13 +1,13 @@
 # Remove when API stabilizes
-add_definitions(-DUSE_MULTIPART=1)
 add_definitions(-DSTF_SERIALIZATION=1)
 
 add_subdirectory (Common)
 add_subdirectory (ReadoutEmulator)
 add_subdirectory (SubTimeFrameBuilder)
 add_subdirectory (SubTimeFrameSender)
-
 add_subdirectory (TimeFrameBuilder)
+
+add_subdirectory (test)
 
 
 # (FLP) Chain configuration and run script for Readout-Emulation mode (no CRU)
@@ -49,6 +49,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/run/flp-epn-dds-topology.xml
 install(FILES ${CMAKE_BINARY_DIR}/bin/startReadoutFLPChain.sh
               ${CMAKE_BINARY_DIR}/bin/startFLPReadoutDataDistEMU.sh
               ${CMAKE_BINARY_DIR}/bin/start_Emulator-FLP-EPN.sh
+              ${CMAKE_BINARY_DIR}/bin/start_Emulator-3FLP-3EPN.sh
   DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ WORLD_READ)
 
@@ -58,4 +59,3 @@ install(FILES ${CMAKE_BINARY_DIR}/bin/config/readout-flp-chain.json
               ${CMAKE_BINARY_DIR}/bin/config/readout-emu-flp-epn-chain.json
               ${CMAKE_BINARY_DIR}/bin/config/flp-epn-dds-topology.xml
   DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/config)
-

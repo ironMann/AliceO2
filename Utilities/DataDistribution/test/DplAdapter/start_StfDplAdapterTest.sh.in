@@ -1,0 +1,116 @@
+#!/bin/bash -u
+
+
+function parse_parameters() {
+read -d '' PARSER <<"EOF"
+import argparse
+
+parser = argparse.ArgumentParser(description='Run FLP-EPN chain',
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('--tmux', required=False, action='store_true', help='Run in tmux CC mode')
+parser.add_argument('--no-gui', dest='nogui', required=False, action='store_true', help='Show GUI')
+
+parser.add_argument('-f', '--flp', required=False, default=1, action='store', type=int, help='Number of FLP instances (1,2,3)')
+parser.add_argument('-e', '--epn', required=False, default=0, action='store', type=int, help='Number of EPN instances (0,1,2,3)')
+parser.add_argument('-n', '--equip', required=False, default=2, action='store', type=int, help='Number data producer equipment per FLP chain')
+parser.add_argument('-r', '--rate', required=False, default=2.0, action='store', type=float, help='Data rate of each equipment instance (in Gb/s)')
+parser.add_argument('-s', '--rsize', required=False, default=4, action='store', type=int, help='Size of the readout memory segment (in GiB)')
+parser.add_argument('-p', '--spsize', required=False, default=2, action='store', type=int, help='Size of the readout super-pages (in MiB)')
+
+try:
+  args = parser.parse_args()
+except SystemExit:
+  exit(1) # return error to stop the script if help is shown
+
+print("FLP_CNT=%s" % args.flp)
+print("EPN_CNT=%s" % args.epn)
+print("EQUIPMENT_CNT=%s" % args.equip)
+print("EQUIPMENT_RATE=%s" % int(args.rate * 1e+9))
+print("DATA_REGION_SIZE=%s" % int(args.rsize * (1<<30)))
+print("SUPERPAGE_SIZE=%s" % int(args.spsize * (1<<20)))
+print("USE_TMUX=%s" % ("1" if args.tmux else ""))
+print("GUI=%s" % ("0" if args.nogui else "1"))
+EOF
+
+python -c "$PARSER" "$@"
+}
+
+ARGS="$(parse_parameters "$@")"
+if [ ! $? -eq 0 ]; then
+  echo "$ARGS"
+  exit 1
+fi
+
+echo "$ARGS"
+eval $ARGS
+
+DMA_CHUNK_SIZE=0 # deprecated
+
+shmmonitor --cleanup &> /dev/null
+
+chainConfig="@CMAKE_BINARY_DIR@/bin/config/readout-emu-flp-epn-chain.json"
+
+IO_THREADS=8
+
+READOUT="ReadoutEmulatorDevice"
+READOUT+=" --transport shmem"
+READOUT+=" --shm-monitor true"
+READOUT+=" --mq-config $chainConfig"
+READOUT+=" --data-shm-region-size $DATA_REGION_SIZE"
+READOUT+=" --cru-superpage-size $SUPERPAGE_SIZE"
+READOUT+=" --cru-dma-chunk-size $DMA_CHUNK_SIZE"
+READOUT+=" --cru-link-count $EQUIPMENT_CNT"
+READOUT+=" --cru-link-bits-per-s $EQUIPMENT_RATE"
+READOUT+=" --gui $GUI"
+READOUT+=" --io-threads $IO_THREADS"
+
+STF_BUILDER="SubTimeFrameBuilderDevice"
+STF_BUILDER+=" --transport shmem"
+STF_BUILDER+=" --shm-monitor true"
+STF_BUILDER+=" --mq-config $chainConfig"
+STF_BUILDER+=" --cru-count 1" # remove
+STF_BUILDER+=" --gui $GUI"
+STF_BUILDER+=" --io-threads $IO_THREADS"
+
+# STF_SENDER="SubTimeFrameSenderDevice"
+# STF_SENDER+=" --transport shmem"
+# STF_SENDER+=" --shm-monitor true"
+# STF_SENDER+=" --mq-config $chainConfig"
+# STF_SENDER+=" --epn-count $EPN_CNT"
+# STF_SENDER+=" --gui $GUI"
+# STF_SENDER+=" --io-threads $IO_THREADS"
+
+# TF_BUILDER="TimeFrameBuilderDevice"
+# TF_BUILDER+=" --transport shmem"
+# TF_BUILDER+=" --shm-monitor true"
+# TF_BUILDER+=" --mq-config $chainConfig"
+# TF_BUILDER+=" --flp-count $FLP_CNT"
+# TF_BUILDER+=" --gui $GUI"
+# TF_BUILDER+=" --io-threads $IO_THREADS"
+
+
+DPL_STF_BRIDGE="test_StfDplAdapter"
+DPL_STF_BRIDGE+=" --id SubTimeFrameBuilderDplAdapter"
+DPL_STF_BRIDGE+=" --channel-config name=SubTimeFrameBuilderDplAdapter,transport=shmem,type=pair,method=connect,address=ipc:///tmp/stf-builder-pipe-0,rateLogging=1"
+DPL_STF_BRIDGE+=" --channel-config name=from_SubTimeFrameBuilderDplAdapter_to_foreign-consumer,transport=shmem,type=pair,method=bind,address=ipc:///tmp/stf-dpl_adapter-pipe-0,rateLogging=1"
+DPL_STF_BRIDGE+=" --SubTimeFrameBuilderDplAdapter"
+DPL_STF_BRIDGE+=" --severity info"
+
+DPL_STF_PROCESSOR="test_StfDplAdapter"
+DPL_STF_PROCESSOR+=" --id foreign-consumer"
+DPL_STF_PROCESSOR+=" --channel-config name=from_SubTimeFrameBuilderDplAdapter_to_foreign-consumer,transport=shmem,type=pair,method=connect,address=ipc:///tmp/stf-dpl_adapter-pipe-0,rateLogging=1"
+DPL_STF_PROCESSOR+=" --foreign-consumer"
+DPL_STF_PROCESSOR+=" --severity info"
+
+
+# (FLP) Start FLP+DPL processes
+if [[ $FLP_CNT -gt 0 ]]; then
+
+  # DPL
+  xterm -geometry 90x57+1120+0 -hold -e @CMAKE_BINARY_DIR@/bin/$DPL_STF_BRIDGE &
+  xterm -geometry 90x57+1120+0 -hold -e @CMAKE_BINARY_DIR@/bin/$DPL_STF_PROCESSOR &
+
+  # FLP
+  xterm -geometry 90x57+560+0 -hold -e @CMAKE_BINARY_DIR@/bin/$STF_BUILDER                 --id stf_builder-0 &
+  xterm -geometry 90x57+0+0 -hold -e @CMAKE_BINARY_DIR@/bin/$READOUT --link-id-offset 0    --id readout-0 &
+fi

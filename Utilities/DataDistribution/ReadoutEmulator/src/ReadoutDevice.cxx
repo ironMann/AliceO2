@@ -157,13 +157,7 @@ bool ReadoutDevice::ConditionalRun()
     mDataBlockMsgs.emplace_back(std::move(lOutputChan.NewMessage(mDataRegion, lDmaChunk.mDataPtr, lDmaChunk.mDataSize)));
   }
 
-#if USE_MULTIPART == 1
   lOutputChan.Send(mDataBlockMsgs);
-#else /* one by one */
-  for (auto &lMsg : mDataBlockMsgs)
-    lOutputChan.Send(lMsg);
-#endif
-
   mDataBlockMsgs.clear();
 
   return true;

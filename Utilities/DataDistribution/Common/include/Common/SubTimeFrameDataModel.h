@@ -36,9 +36,14 @@ struct EquipmentIdentifier
   bool operator<(const EquipmentIdentifier &other) const {
     if (mDataDescription < other.mDataDescription)
       return true;
-    else if (mDataDescription == other.mDataDescription && mSubSpecification < other.mSubSpecification)
+    else if (
+      mDataDescription == other.mDataDescription &&
+      mSubSpecification < other.mSubSpecification)
       return true;
-    else if (mDataDescription == other.mDataDescription && mSubSpecification == other.mSubSpecification && mSubSpecification < other.mSubSpecification)
+    else if (
+      mDataDescription == other.mDataDescription &&
+      mSubSpecification == other.mSubSpecification &&
+      mSubSpecification < other.mSubSpecification)
       return true;
     else
       return false;
@@ -51,6 +56,29 @@ struct EquipmentIdentifier
   }
 };
 
+
+
+struct HBFrameHeader : public BaseHeader {
+
+  // Required to do the lookup
+  static const o2::header::HeaderType sHeaderType;
+  static const uint32_t sVersion = 1;
+
+  uint32_t  mHBFrameId;
+
+
+  HBFrameHeader(uint32_t pId)
+  : BaseHeader(sizeof(HBFrameHeader), sHeaderType, o2::header::gSerializationMethodNone, sVersion),
+    mHBFrameId(pId)
+  {}
+
+  HBFrameHeader()
+  : HBFrameHeader(0)
+  {}
+};
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 /// Visitor friends
 ////////////////////////////////////////////////////////////////////////////////
@@ -59,7 +87,8 @@ struct EquipmentIdentifier
   friend class InterleavedHdrDataDeserializer;      \
   friend class HdrDataSerializer;                   \
   friend class HdrDataDeserializer;                 \
-  friend class DataIdentifierSplitter;
+  friend class DataIdentifierSplitter;              \
+  friend class StfToDplAdapter;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// EquipmentHBFrames
@@ -128,6 +157,9 @@ public:
   std::uint64_t getDataSize() const;
 
   const SubTimeFrameHeader& Header() const { return *mHeader; }
+
+
+  std::vector<EquipmentIdentifier> getEquipmentIdentifiers() const;
 
 private:
 

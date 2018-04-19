@@ -18,6 +18,8 @@
 namespace o2 {
 namespace DataDistribution {
 
+const o2::header::HeaderType HBFrameHeader::sHeaderType = "HBFrame";
+
 ////////////////////////////////////////////////////////////////////////////////
 /// EquipmentHBFrames
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,6 +120,20 @@ std::uint64_t SubTimeFrame::getDataSize() const
   return lDataSize;
 }
 
+std::vector<EquipmentIdentifier> SubTimeFrame::getEquipmentIdentifiers() const
+{
+  std::vector<EquipmentIdentifier> lKeys;
+
+  transform(std::begin(mReadoutData), std::end(mReadoutData), std::back_inserter(lKeys),
+    [](decltype(mReadoutData)::value_type const& pair) {
+      return pair.first;
+  });
+
+  return lKeys;
+}
+
+
+// TODO: make sure to report miss-configured equipment specs
 static bool fixme__EqupId = true;
 
 SubTimeFrame& SubTimeFrame::operator+=(SubTimeFrame&& pStf)

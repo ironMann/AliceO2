@@ -28,7 +28,6 @@ namespace impl {
 static
 inline std::int64_t ReceiveMessages(FairMQMessagePtr &pMsg, const FairMQChannel &pChan, std::deque<FairMQMessagePtr> &pMessages) {
 
-#if USE_MULTIPART == 1
   if (pMessages.empty()) {
 
     std::vector<FairMQMessagePtr> lTmpMsgs;
@@ -49,10 +48,6 @@ inline std::int64_t ReceiveMessages(FairMQMessagePtr &pMsg, const FairMQChannel 
 
   return pMsg->GetSize();
 
-#else /* receive one-by-one */
-
-  return pChan.Receive(pMsg);
-#endif
 }
 } /*namespace impl*/
 
@@ -169,5 +164,3 @@ void StfInputInterface::DataHandlerThread(const unsigned pInputChannelIdx)
 
 }
 }
-
-
