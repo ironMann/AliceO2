@@ -13,11 +13,11 @@
 
 #include "Common/SubTimeFrameDataModel.h"
 
+
 #include <Headers/DataHeader.h>
 
 class O2Device;
 
-#include <deque>
 #include <vector>
 
 class FairMQChannel;
@@ -54,20 +54,19 @@ private:
 
 class InterleavedHdrDataDeserializer : public ISubTimeFrameVisitor {
 public:
-  InterleavedHdrDataDeserializer() = delete;
-  InterleavedHdrDataDeserializer(const FairMQChannel& pChan) : mChan(pChan)
-  {
-  }
+  InterleavedHdrDataDeserializer() = default;
 
-  bool deserialize(SubTimeFrame& pStf);
+  bool deserialize(SubTimeFrame& pStf, const FairMQChannel& pChan);
+  bool deserialize(SubTimeFrame& pStf, FairMQParts &pMsgs);
 
 protected:
+  bool deserialize_impl(SubTimeFrame& pStf);
   void visit(EquipmentHBFrames& pStf) override;
   void visit(SubTimeFrame& pStf) override;
 
 private:
-  std::deque<FairMQMessagePtr> mMessages;
-  const FairMQChannel& mChan;
+  std::vector<FairMQMessagePtr> mMessages;
+  std::vector<FairMQMessagePtr>::iterator mMsgIter;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -101,23 +100,24 @@ private:
 
 class HdrDataDeserializer : public ISubTimeFrameVisitor {
 public:
-  HdrDataDeserializer() = delete;
-  HdrDataDeserializer(const FairMQChannel& pChan) : mChan(pChan)
+  HdrDataDeserializer()
   {
+    mHeaderMessages.reserve(1024);
+    mDataMessages.reserve(1024);
   }
 
-  bool deserialize(SubTimeFrame& pStf);
+  bool deserialize(SubTimeFrame& pStf, const FairMQChannel& pChan);
 
 protected:
   void visit(EquipmentHBFrames& pStf) override;
   void visit(SubTimeFrame& pStf) override;
 
 private:
-  std::deque<FairMQMessagePtr> mHeaderMessages;
-  std::deque<FairMQMessagePtr> mDataMessages;
-  const FairMQChannel& mChan;
+  std::vector<FairMQMessagePtr> mHeaderMessages;
+  std::vector<FairMQMessagePtr>::iterator mHeaderIter;
+  std::vector<FairMQMessagePtr> mDataMessages;
+  std::vector<FairMQMessagePtr>::iterator mDataIter;
 };
-
 
 }
 } /* o2::DataDistribution */

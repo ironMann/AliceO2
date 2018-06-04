@@ -18,6 +18,8 @@
 namespace o2 {
 namespace DataDistribution {
 
+const o2::header::HeaderType HBFrameHeader::sHeaderType = "HBFrame";
+
 ////////////////////////////////////////////////////////////////////////////////
 /// EquipmentHBFrames
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,9 +79,9 @@ SubTimeFrame::SubTimeFrame(int pFMQChannelId, uint64_t pStfId)
 
   mHeader->mId = pStfId;
   mHeader->headerSize = sizeof(SubTimeFrameHeader);
-  mHeader->dataDescription = o2::Header::gDataDescriptionSubTimeFrame;
-  mHeader->dataOrigin = o2::Header::gDataOriginFLP;
-  mHeader->payloadSerializationMethod = o2::Header::gSerializationMethodNone; // Stf serialization?
+  mHeader->dataDescription = o2::header::gDataDescriptionSubTimeFrame;
+  mHeader->dataOrigin = o2::header::gDataOriginFLP;
+  mHeader->payloadSerializationMethod = o2::header::gSerializationMethodNone; // Stf serialization?
   mHeader->payloadSize = 0;                                                   // to hold # of CRUs in the FLP
 }
 
@@ -87,8 +89,8 @@ void SubTimeFrame::addHBFrames(const ReadoutSubTimeframeHeader &pHdr, std::vecto
 {
   // FIXME: proper equipment specification
   EquipmentIdentifier lEquipId;
-  lEquipId.mDataDescription = o2::Header::gDataDescriptionRawData;
-  lEquipId.mDataOrigin = o2::Header::gDataOriginTPC;
+  lEquipId.mDataDescription = o2::header::gDataDescriptionRawData;
+  lEquipId.mDataOrigin = o2::header::gDataOriginTPC;
   lEquipId.mSubSpecification = pHdr.linkId;
 
   if (mReadoutData.find(lEquipId) == mReadoutData.end()) {
@@ -118,6 +120,20 @@ std::uint64_t SubTimeFrame::getDataSize() const
   return lDataSize;
 }
 
+std::vector<EquipmentIdentifier> SubTimeFrame::getEquipmentIdentifiers() const
+{
+  std::vector<EquipmentIdentifier> lKeys;
+
+  transform(std::begin(mReadoutData), std::end(mReadoutData), std::back_inserter(lKeys),
+    [](decltype(mReadoutData)::value_type const& pair) {
+      return pair.first;
+  });
+
+  return lKeys;
+}
+
+
+// TODO: make sure to report miss-configured equipment specs
 static bool fixme__EqupId = true;
 
 SubTimeFrame& SubTimeFrame::operator+=(SubTimeFrame&& pStf)

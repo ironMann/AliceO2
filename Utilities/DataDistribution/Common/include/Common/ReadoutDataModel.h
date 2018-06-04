@@ -24,7 +24,7 @@ namespace o2 {
 namespace DataDistribution {
 
 using namespace o2::Base;
-using namespace o2::Header;
+using namespace o2::header;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// CRU Link
