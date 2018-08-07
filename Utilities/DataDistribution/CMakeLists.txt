@@ -58,4 +58,3 @@ install(FILES ${CMAKE_BINARY_DIR}/bin/config/readout-flp-chain.json
               ${CMAKE_BINARY_DIR}/bin/config/readout-emu-flp-epn-chain.json
               ${CMAKE_BINARY_DIR}/bin/config/flp-epn-dds-topology.xml
   DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/config)
-

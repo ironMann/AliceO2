@@ -11,6 +11,9 @@
 #ifndef ALICEO2_STFBUILDER_INPUT_H_
 #define ALICEO2_STFBUILDER_INPUT_H_
 
+#include "Common/SubTimeFrameDataModel.h"
+#include "Common/ConcurrentQueue.h"
+
 #include <thread>
 #include <vector>
 
@@ -23,8 +26,10 @@ class StfInputInterface {
 public:
 
   StfInputInterface() = default;
-  StfInputInterface(StfBuilderDevice &pStfBuilderDev)
-  : mDevice(pStfBuilderDev) {}
+  StfInputInterface(StfBuilderDevice &pStfBuilderDev, ConcurrentFifo<SubTimeFrame> &pOutQueue)
+  : mDevice(pStfBuilderDev),
+    mOutQueue(pOutQueue)
+  { }
 
   void Start(unsigned pCnt);
   void Stop();
@@ -38,6 +43,7 @@ private:
 
   /// Threads for input channels
   std::vector<std::thread> mInputThreads;
+  ConcurrentFifo<SubTimeFrame> &mOutQueue;
 };
 
 }

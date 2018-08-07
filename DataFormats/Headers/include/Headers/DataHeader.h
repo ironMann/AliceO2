@@ -777,6 +777,8 @@ constexpr o2::header::DataOrigin gDataOriginTPC{ "TPC" };
 constexpr o2::header::DataOrigin gDataOriginTRD{ "TRD" };
 constexpr o2::header::DataOrigin gDataOriginZDC{ "ZDC" };
 
+constexpr o2::header::DataOrigin gDataOriginCRU{ "CRU" };
+
 //possible data types
 constexpr o2::header::DataDescription gDataDescriptionAny{ "***************" };
 constexpr o2::header::DataDescription gDataDescriptionInvalid{ "INVALID_DESC" };
@@ -789,8 +791,6 @@ constexpr o2::header::DataDescription gDataDescriptionROOTStreamers{ "ROOT STREA
 
 constexpr o2::header::DataDescription gDataDescriptionSubTimeFrame{"SUBTIMEFRAME"};
 constexpr o2::header::DataDescription gDataDescriptionCruData{"CRUDATA"};
-constexpr o2::header::DataDescription gDataDescriptionCruLinkData{"CRULINKDATA"};
-constexpr o2::header::DataDescription gDataDescriptionBHFrame{"HBFRAME"};
 
 /// @} // end of doxygen group
 

@@ -123,7 +123,7 @@ void StfInputInterface::DataHandlerThread(const unsigned pInputChannelIdx)
         if (lCurrentStfId >= 0) {
           // Finished: queue the current STF
           // LOG(INFO) << "Received TF[" << lCurrentStf.Header().mId<< "]::size= " << lCurrentStf.getDataSize();
-          mDevice.QueueStf(std::move(lCurrentStf));
+          mOutQueue.push(std::move(lCurrentStf));
         }
 
         // start a new STF

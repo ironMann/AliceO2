@@ -11,7 +11,10 @@
 #include "SubTimeFrameBuilder/SubTimeFrameBuilderDevice.h"
 #include <options/FairMQProgOptions.h>
 
+#include "Common/SubTimeFrameFileSink.h"
+
 #include "runFairMQDevice.h"
+#include <vector>
 
 namespace bpo = boost::program_options;
 
@@ -38,6 +41,10 @@ void addCustomOptions(bpo::options_description& options)
       bpo::value<bool>()->default_value(true),
       "Enable/disable GUI"
     );
+
+
+
+    options.add(o2::DataDistribution::SubTimeFrameFileSink::getProgramOptions());
 }
 
 FairMQDevicePtr getDevice(const FairMQProgOptions& /*config*/)

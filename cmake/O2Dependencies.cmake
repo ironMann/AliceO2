@@ -139,6 +139,7 @@ o2_define_bucket(
 
     INCLUDE_DIRECTORIES
     ${CMAKE_SOURCE_DIR}/Utilities/DataDistribution/Common/include
+    ${MS_GSL_INCLUDE_DIR}
 )
 
 o2_define_bucket(
@@ -1460,7 +1461,7 @@ o2_define_bucket(
     DetectorsBase
     SimulationDataFormat
     DataFormatsTOF
-    
+
     INCLUDE_DIRECTORIES
     ${FAIRROOT_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/Detectors/Base/include
@@ -1637,7 +1638,7 @@ o2_define_bucket(
     RIO
     DetectorsBase
     SimulationDataFormat
-    Core 
+    Core
 
     INCLUDE_DIRECTORIES
     ${FAIRROOT_INCLUDE_DIR}

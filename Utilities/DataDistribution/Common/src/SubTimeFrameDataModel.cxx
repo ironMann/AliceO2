@@ -36,12 +36,19 @@ EquipmentHBFrames::EquipmentHBFrames(int pFMQChannelId, const EquipmentIdentifie
 
 const EquipmentIdentifier EquipmentHBFrames::getEquipmentIdentifier() const
 {
-  EquipmentIdentifier lEquipId;
-  lEquipId.mDataDescription = mHeader->dataDescription;
-  lEquipId.mDataOrigin = mHeader->dataOrigin;
-  lEquipId.mSubSpecification = mHeader->subSpecification;
+  return EquipmentIdentifier (
+    mHeader->dataDescription,
+    mHeader->dataOrigin,
+    mHeader->subSpecification
+  );
+}
 
-  return lEquipId;
+void EquipmentHBFrames::addHBFrame(FairMQMessagePtr &&pHBFrame)
+{
+  mHBFrames.emplace_back(std::move(pHBFrame));
+
+  // Update payload count
+  mHeader->payloadSize = mHBFrames.size();
 }
 
 void EquipmentHBFrames::addHBFrames(std::vector<FairMQMessagePtr> &&pHBFrames)
@@ -85,13 +92,32 @@ SubTimeFrame::SubTimeFrame(int pFMQChannelId, uint64_t pStfId)
   mHeader->payloadSize = 0;                                                   // to hold # of CRUs in the FLP
 }
 
+void SubTimeFrame::addHBFrame(const EquipmentIdentifier &pEqId, FairMQMessagePtr &&pHBFrame)
+{
+  // make the equipment id if needed
+  if (mReadoutData.find(pEqId) == mReadoutData.end()) {
+    /* add a HBFrame collection for the new equipment */
+    mReadoutData.emplace(
+      std::piecewise_construct,
+      std::make_tuple(pEqId),
+      std::make_tuple(mFMQChannelId, pEqId)
+    );
+  }
+
+  mReadoutData.at(pEqId).addHBFrame(std::move(pHBFrame));
+
+  // update the count
+  mHeader->payloadSize = mReadoutData.size();
+}
+
 void SubTimeFrame::addHBFrames(const ReadoutSubTimeframeHeader &pHdr, std::vector<FairMQMessagePtr> &&pHBFrames)
 {
   // FIXME: proper equipment specification
-  EquipmentIdentifier lEquipId;
-  lEquipId.mDataDescription = o2::header::gDataDescriptionRawData;
-  lEquipId.mDataOrigin = o2::header::gDataOriginTPC;
-  lEquipId.mSubSpecification = pHdr.linkId;
+  EquipmentIdentifier lEquipId(
+    o2::header::gDataDescriptionCruData,
+    o2::header::gDataOriginCRU,
+    pHdr.linkId
+  );
 
   if (mReadoutData.find(lEquipId) == mReadoutData.end()) {
     /* add a HBFrame collection for the new equipment */

@@ -16,6 +16,8 @@
 #include "Common/ConcurrentQueue.h"
 #include "Common/Utilities.h"
 
+#include "Common/SubTimeFrameFileSink.h"
+
 #include "SubTimeFrameBuilder/SubTimeFrameBuilderInput.h"
 
 #include <O2Device/O2Device.h>
@@ -55,7 +57,7 @@ public:
   const std::string& getInputChannelName() const { return mInputChannelName; }
   const std::string& getOutputChannelName() const { return mOutputChannelName; }
 
-  void QueueStf(SubTimeFrame &&pStf) { mStfQueue.push(std::move(pStf)); }
+  // void QueueStf(SubTimeFrame &&pStf) { mStfQueue.push(std::move(pStf)); }
 
 protected:
   void PreRun() final;
@@ -75,10 +77,14 @@ protected:
   StfInputInterface mReadoutInterface;
 
   /// Internal queues
-  ConcurrentFifo<SubTimeFrame> mStfQueue;
+  ConcurrentFifo<SubTimeFrame> mStfReadoutOutQueue;
+  ConcurrentFifo<SubTimeFrame> mStfSinkOutQueue;
 
   /// Internal threads
   std::thread mOutputThread;
+
+  /// File sink
+  SubTimeFrameFileSink mFileSink;
 
   /// Root stuff
   bool mBuildHistograms = true;

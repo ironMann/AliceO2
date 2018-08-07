@@ -28,15 +28,18 @@
 namespace o2 {
 namespace DataDistribution {
 
+using namespace std::chrono_literals;
+
 constexpr int StfBuilderDevice::gStfOutputChanId;
 
 StfBuilderDevice::StfBuilderDevice()
   : O2Device{},
-    mReadoutInterface(*this),
+    mReadoutInterface(*this, mStfReadoutOutQueue),
+    mFileSink(this, mStfReadoutOutQueue, mStfSinkOutQueue),
     mGui(nullptr),
-    mStfSizeSamples(10000),
-    mStfFreqSamples(10000),
-    mStfDataTimeSamples(10000)
+    mStfSizeSamples(1024),
+    mStfFreqSamples(1024),
+    mStfDataTimeSamples(1024)
 {}
 
 StfBuilderDevice::~StfBuilderDevice()
@@ -49,6 +52,10 @@ void StfBuilderDevice::InitTask()
   mOutputChannelName = GetConfig()->GetValue<std::string>(OptionKeyOutputChannelName);
   mCruCount = GetConfig()->GetValue<std::uint64_t>(OptionKeyCruCount);
   mBuildHistograms = GetConfig()->GetValue<bool>(OptionKeyGui);
+
+  // File sink
+  if (!mFileSink.loadVerifyConfig(*(this->GetConfig())))
+    exit(-1);
 
   ChannelAllocator::get().addChannel(gStfOutputChanId, GetChannel(mOutputChannelName, 0));
 
@@ -64,6 +71,7 @@ void StfBuilderDevice::PreRun()
   mOutputThread = std::thread(&StfBuilderDevice::StfOutputThread, this);
   // start one thread per readout process
   mReadoutInterface.Start(mCruCount);
+  mFileSink.start();
 
   // gui thread
   if (mBuildHistograms) {
@@ -78,8 +86,10 @@ void StfBuilderDevice::PostRun()
   // wait for readout interface threads
   mReadoutInterface.Stop();
   // signal and wait for the optput thread
-  mStfQueue.stop();
+  mFileSink.stop();
+
   mOutputThread.join();
+
   // wait for the gui thread
   if (mBuildHistograms && mGuiThread.joinable()) {
     mGuiThread.join();
@@ -90,9 +100,8 @@ void StfBuilderDevice::PostRun()
 
 bool StfBuilderDevice::ConditionalRun()
 {
-  // ugh: nothing to do here sleep for awhile
-  // usleep(500000);
-  std::this_thread::sleep_for(std::chrono::duration<uint64_t, std::milli>(500));
+  // nothing to do here sleep for awhile
+  std::this_thread::sleep_for(500ms);
   return true;
 }
 
@@ -109,21 +118,24 @@ void StfBuilderDevice::StfOutputThread()
 #error "Unknown STF_SERIALIZATION type"
 #endif
 
+  using hres_clock = std::chrono::high_resolution_clock;
+
   while (CheckCurrentState(RUNNING)) {
     SubTimeFrame lStf;
 
-    const auto lFreqStartTime = std::chrono::high_resolution_clock::now();
+    const auto lFreqStartTime = hres_clock::now();
 
-    if (!mStfQueue.pop(lStf))
+    // Get a STF readu for sending
+    if (!mStfSinkOutQueue.pop(lStf))
       break;
 
-
-    if (mBuildHistograms)
+    if (mBuildHistograms) {
       mStfFreqSamples.Fill(
-        1.0 / std::chrono::duration<double>(
-        std::chrono::high_resolution_clock::now() - lFreqStartTime).count());
+        1.0 / std::chrono::duration<double>(hres_clock::now() - lFreqStartTime).count());
+    }
 
-    const auto lStartTime = std::chrono::high_resolution_clock::now();
+    // Send the STF
+    const auto lSendStartTime = hres_clock::now();
 
 #ifdef STF_FILTER_EXAMPLE
     // EXAMPLE:
@@ -155,9 +167,9 @@ void StfBuilderDevice::StfOutputThread()
     }
 #else
 
-    // Send the STF without filtering
-    if (mBuildHistograms)
+    if (mBuildHistograms) {
       mStfSizeSamples.Fill(lStf.getDataSize());
+    }
 
     try {
       lStfSerializer.serialize(std::move(lStf));
@@ -173,7 +185,7 @@ void StfBuilderDevice::StfOutputThread()
 #endif
 
     if (mBuildHistograms) {
-      double lTimeMs = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - lStartTime).count();
+      double lTimeMs = std::chrono::duration<double, std::milli>(hres_clock::now() - lSendStartTime).count();
       mStfDataTimeSamples.Fill(lTimeMs);
     }
   }

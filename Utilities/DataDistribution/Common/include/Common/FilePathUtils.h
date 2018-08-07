@@ -8,39 +8,29 @@
 // granted to it by virtue of its status as an Intergovernmental Organization
 // or submit itself to any jurisdiction.
 
-#ifndef STF_DATAMODEL_UTILS_H_
-#define STF_DATAMODEL_UTILS_H_
+#ifndef FILE_PATH_UTILS_H_
+#define FILE_PATH_UTILS_H_
 
 namespace o2 {
 namespace DataDistribution {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-/// IDataModelObject interface
+/// FilePathUtils class
 ////////////////////////////////////////////////////////////////////////////////
-class EquipmentHBFrames;
-class SubTimeFrame;
 
-class ISubTimeFrameVisitor {
+class FilePathUtils {
 public:
-  virtual void visit(SubTimeFrame&) = 0;
-  virtual void visit(EquipmentHBFrames&) = 0;
-};
+  FilePathUtils() = delete;
 
-class ISubTimeFrameConstVisitor {
-public:
-  virtual void visit(const SubTimeFrame&) = 0;
-  virtual void visit(const EquipmentHBFrames&) = 0;
-};
 
-class IDataModelObject {
-public:
-  virtual void accept(ISubTimeFrameVisitor& v) = 0;
-  virtual void accept(ISubTimeFrameConstVisitor& v) const = 0;
+  static std::string getNextSeqName(const std::string &pRoot);
+
+
 };
 
 
 }
 } /* o2::DataDistribution */
 
-#endif /* STF_DATAMODEL_UTILS_H_ */
+#endif /* FILE_PATH_UTILS_H_ */

@@ -33,6 +33,26 @@ struct EquipmentIdentifier
   DataOrigin                        mDataOrigin;
   DataHeader::SubSpecificationType  mSubSpecification; /* uint64_t */
 
+  EquipmentIdentifier() = delete;
+
+  EquipmentIdentifier(const DataDescription &pDataDesc, const DataOrigin &pDataOrig, const DataHeader::SubSpecificationType &pSubSpec)
+  : mDataDescription(pDataDesc),
+    mDataOrigin(pDataOrig),
+    mSubSpecification(pSubSpec)
+  {}
+
+  EquipmentIdentifier(const EquipmentIdentifier &pEid) {
+    mDataDescription = pEid.mDataDescription;
+    mDataOrigin = pEid.mDataOrigin;
+    mSubSpecification = pEid.mSubSpecification;
+  }
+
+  EquipmentIdentifier(const o2::header::DataHeader &pDh) {
+    mDataDescription = pDh.dataDescription;
+    mDataOrigin = pDh.dataOrigin;
+    mSubSpecification = pDh.subSpecification;
+  }
+
   bool operator<(const EquipmentIdentifier &other) const {
     if (mDataDescription < other.mDataDescription)
       return true;
@@ -88,7 +108,7 @@ struct HBFrameHeader : public BaseHeader {
   friend class HdrDataSerializer;                   \
   friend class HdrDataDeserializer;                 \
   friend class DataIdentifierSplitter;              \
-  friend class StfToDplAdapter;
+  friend class SubTimeFrameFileWriter;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// EquipmentHBFrames
@@ -110,14 +130,15 @@ public:
   EquipmentHBFrames(EquipmentHBFrames&& a) = default;
   EquipmentHBFrames& operator=(EquipmentHBFrames&& a) = default;
 
-  void accept(ISubTimeFrameVisitor& v) override { v.visit(*this); };
-
+  void addHBFrame(FairMQMessagePtr &&pHBFrame);
   void addHBFrames(std::vector<FairMQMessagePtr> &&pHBFrames);
   std::uint64_t getDataSize() const;
   const EquipmentIdentifier getEquipmentIdentifier() const;
 
   const EquipmentHeader& Header() const { return *mHeader; }
 
+  void accept(ISubTimeFrameVisitor& v) override { v.visit(*this); };
+  void accept(ISubTimeFrameConstVisitor& v) const override { v.visit(*this); };
 private:
   ChannelPtr<EquipmentHeader>      mHeader;
   std::vector<FairMQMessagePtr>   mHBFrames;
@@ -136,6 +157,7 @@ struct SubTimeFrameHeader : public DataHeader {
 
 class SubTimeFrame : public IDataModelObject {
   DECLARE_STF_FRIENDS
+
 public:
   SubTimeFrame(int pFMQChannelId, std::uint64_t pStfId);
   SubTimeFrame() = default;
@@ -150,16 +172,20 @@ public:
   // adopt all data from a
   SubTimeFrame& operator+=(SubTimeFrame&& a);
 
-  void accept(ISubTimeFrameVisitor& v) override { v.visit(*this); };
-
   // TODO: add proper equip IDs
+  void addHBFrame(const EquipmentIdentifier &pEqId, FairMQMessagePtr &&pHBFrame);
   void addHBFrames(const ReadoutSubTimeframeHeader &pHdr, std::vector<FairMQMessagePtr> &&pHBFrames);
+
   std::uint64_t getDataSize() const;
 
   const SubTimeFrameHeader& Header() const { return *mHeader; }
 
 
   std::vector<EquipmentIdentifier> getEquipmentIdentifiers() const;
+
+
+  void accept(ISubTimeFrameVisitor& v) override { v.visit(*this); };
+  void accept(ISubTimeFrameConstVisitor& v) const override { v.visit(*this); };
 
 private:
 
