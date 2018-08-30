@@ -37,6 +37,7 @@
 #include <algorithm> // std::min
 #include <stdexcept>
 #include <string>
+#include <functional> // hash
 #include "MemoryResources/MemoryResources.h"
 
 namespace o2 {
@@ -789,7 +790,6 @@ constexpr o2::header::DataDescription gDataDescriptionConfig{ "CONFIGURATION" };
 constexpr o2::header::DataDescription gDataDescriptionInfo{ "INFORMATION" };
 constexpr o2::header::DataDescription gDataDescriptionROOTStreamers{ "ROOT STREAMERS" };
 
-constexpr o2::header::DataDescription gDataDescriptionSubTimeFrame{"SUBTIMEFRAME"};
 constexpr o2::header::DataDescription gDataDescriptionCruData{"CRUDATA"};
 
 /// @} // end of doxygen group
@@ -816,5 +816,57 @@ static_assert(sizeof(BaseHeader::sMagicString) == sizeof(BaseHeader::magicString
 } //namespace header
 
 } //namespace o2
+
+///
+/// specialized hash functions
+namespace std {
+
+template<>
+struct hash<o2::header::DataDescription>
+{
+  typedef o2::header::DataDescription argument_type;
+  typedef std::size_t result_type;
+
+  result_type operator()(argument_type const &a) const noexcept {
+
+    static_assert(sizeof(o2::header::DataDescription::ItgType) == sizeof(uint64_t) &&
+                  sizeof(o2::header::DataDescription) == 16,
+                  "DataDescription must be 16B long (uint64_t itg[2])");
+
+    return std::hash<o2::header::DataDescription::ItgType>{}(a.itg[0]) ^
+      (std::hash<o2::header::DataDescription::ItgType>{}(a.itg[1]) << 1);
+  }
+};
+
+template<>
+struct hash<o2::header::DataOrigin>
+{
+  typedef o2::header::DataOrigin argument_type;
+  typedef std::size_t result_type;
+
+  result_type operator()(argument_type const &a) const noexcept {
+
+    static_assert(sizeof(o2::header::DataOrigin::ItgType) == sizeof(uint32_t) &&
+                  sizeof(o2::header::DataOrigin) == 4,
+                  "DataOrigin must be 4B long (uint32_t itg[1])");
+
+    return std::hash<o2::header::DataOrigin::ItgType>{}(a.itg[0]);
+  }
+};
+
+template<>
+struct hash<o2::header::DataIdentifier>
+{
+  typedef o2::header::DataIdentifier argument_type;
+  typedef std::size_t result_type;
+
+  result_type operator()(argument_type const &a) const noexcept {
+
+    return std::hash<o2::header::DataDescription>{}(a.dataDescription) ^
+      (std::hash<o2::header::DataOrigin>{}(a.dataOrigin) << 1);
+  }
+};
+
+} //namespace std
 
 #endif
