@@ -16,5 +16,3 @@ add_subdirectory (DataCompression)
 add_subdirectory (MCStepLogger)
 add_subdirectory (PCG)
 
-add_subdirectory (DataDistribution)
-

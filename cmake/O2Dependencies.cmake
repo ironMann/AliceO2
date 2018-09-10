@@ -136,6 +136,7 @@ o2_define_bucket(
     DEPENDENCIES
     Headers
     O2Device
+    Boost::container
 
     INCLUDE_DIRECTORIES
     ${CMAKE_SOURCE_DIR}/Utilities/DataDistribution/Common/include
