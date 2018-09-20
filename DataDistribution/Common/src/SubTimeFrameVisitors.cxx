@@ -85,7 +85,6 @@ std::unique_ptr<SubTimeFrame> SubTimeFrameReadoutBuilder::getStf()
 /// InterleavedHdrDataSerializer
 ////////////////////////////////////////////////////////////////////////////////
 
-static constexpr o2::header::DataDescription gDataDescSubTimeFrame{"DISTSUBTIMEFRAME"};
 static const o2::header::DataHeader gStfDistDataHeader(
   gDataDescSubTimeFrame,
   o2::header::gDataOriginFLP,

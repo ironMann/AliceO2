@@ -31,6 +31,8 @@ namespace DataDistribution {
 using namespace o2::Base;
 using namespace o2::header;
 
+static constexpr o2::header::DataDescription gDataDescSubTimeFrame{"DISTSUBTIMEFRAME"};
+
 struct EquipmentIdentifier
 {
   DataDescription                   mDataDescription;
@@ -117,7 +119,8 @@ struct HBFrameHeader : public BaseHeader {
   friend class InterleavedHdrDataDeserializer;      \
   friend class DataIdentifierSplitter;              \
   friend class SubTimeFrameFileWriter;              \
-  friend class SubTimeFrameFileReader;
+  friend class SubTimeFrameFileReader;              \
+  friend class StfDplAdapter;
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrame

@@ -14,6 +14,7 @@
 #include "Common/SubTimeFrameVisitors.h"
 #include "Common/ReadoutDataModel.h"
 #include "Common/SubTimeFrameDataModel.h"
+#include "Common/SubTimeFrameDPL.h"
 #include "Common/Utilities.h"
 
 #include <TH1.h>
@@ -50,24 +51,26 @@ void StfBuilderDevice::InitTask()
 {
   mInputChannelName = GetConfig()->GetValue<std::string>(OptionKeyInputChannelName);
   mOutputChannelName = GetConfig()->GetValue<std::string>(OptionKeyOutputChannelName);
+  mDplChannelName = GetConfig()->GetValue<std::string>(OptionKeyDplChannelName);
   mStandalone = GetConfig()->GetValue<bool>(OptionKeyStandalone);
   mMaxStfsInPipeline = GetConfig()->GetValue<std::int64_t>(OptionKeyMaxBufferedStfs);
   mCruCount = GetConfig()->GetValue<std::uint64_t>(OptionKeyCruCount);
   mBuildHistograms = GetConfig()->GetValue<bool>(OptionKeyGui);
+  mDplEnabled = GetConfig()->GetValue<bool>(OptionKeyDpl);
 
   // Buffering limitation
   if (mMaxStfsInPipeline > 0) {
     if (mMaxStfsInPipeline < 4) {
       mMaxStfsInPipeline = 4;
-      LOG(INFO) << "Max buffered SubTimeFrames limit increased to: " << mMaxStfsInPipeline;
+      LOG(WARN) << "Configuration: max buffered SubTimeFrames limit increased to: " << mMaxStfsInPipeline;
     }
     mPipelineLimit = true;
-    LOG(WARN) << "Max buffered SubTimeFrames limit is set to " << mMaxStfsInPipeline
+    LOG(WARN) << "Configuration: Max buffered SubTimeFrames limit is set to " << mMaxStfsInPipeline
               << ". Consider increasing it if data loss occurs.";
   } else {
     mPipelineLimit = false;
     LOG(INFO) << "Not imposing limits on number of buffered SubTimeFrames. "
-                 "Possibility of creating back-pressure";
+                 "Possibility of creating back-pressure.";
   }
 
   // File sink
@@ -129,8 +132,10 @@ void StfBuilderDevice::PostRun()
 void StfBuilderDevice::StfOutputThread()
 {
   auto &lOutputChan = GetChannel(getOutputChannelName(), 0);
-
   InterleavedHdrDataSerializer lStfSerializer(lOutputChan);
+
+  auto &lDplChan = GetChannel(getDplChannelName(), 0);
+  StfDplAdapter lStfDplAdapter(lDplChan);
 
   using hres_clock = std::chrono::high_resolution_clock;
 
@@ -173,8 +178,13 @@ void StfBuilderDevice::StfOutputThread()
     if (!mStandalone) {
       // Send filtered data as two objects
       try {
-        lStfSerializer.serialize(std::move(lStfTPC));
-        lStfSerializer.serialize(std::move(lStfITS));
+        if (!mDplEnabled) {
+          lStfSerializer.serialize(std::move(lStfTPC));
+          lStfSerializer.serialize(std::move(lStfITS));
+        } else {
+          lStfDplAdapter.sendToDpl(std::move(lStfTPC));
+          lStfDplAdapter.sendToDpl(std::move(lStfITS));
+        }
       } catch (std::exception& e) {
         if (CheckCurrentState(RUNNING))
           LOG(ERROR) << "StfOutputThread: exception on send: " << e.what();
@@ -192,7 +202,22 @@ void StfBuilderDevice::StfOutputThread()
 
     if (!mStandalone) {
       try {
-        lStfSerializer.serialize(std::move(lStf));
+        if (!mDplEnabled) {
+          lStfSerializer.serialize(std::move(lStf));
+        } else {
+
+          // DPL Channel
+
+          static thread_local unsigned long lThrottle = 0;
+          if (++lThrottle % 88 == 0) {
+            LOG(DEBUG) << "Sending STF to DPL: id:" << lStf->header().mId
+                       << " data size: " << lStf->getDataSize()
+                       << " unique equipments: " << lStf->getEquipmentIdentifiers().size();
+          }
+
+          // Send to DPL bridge
+          lStfDplAdapter.sendToDpl(std::move(lStf));
+        }
       } catch (std::exception& e) {
         if (CheckCurrentState(RUNNING)) {
           LOG(ERROR) << "StfOutputThread: exception on send: " << e.what();
@@ -220,24 +245,27 @@ void StfBuilderDevice::GuiThread()
 
     TH1F lStfSizeHist("StfSizeH", "Readout data size per STF", 100, 0.0, 400e+6);
     lStfSizeHist.GetXaxis()->SetTitle("Size [B]");
-    for (const auto v : mStfSizeSamples)
+    for (const auto v : mStfSizeSamples) {
       lStfSizeHist.Fill(v);
+    }
 
     mGui->Canvas().cd(1);
     lStfSizeHist.Draw();
 
-    TH1F lStfFreqHist("STFFreq", "SubTimeFrame frequency", 200, 0.0, 100.0);
+    TH1F lStfFreqHist("STFFreq", "SubTimeFrame frequency", 100, 0.0, 100.0);
     lStfFreqHist.GetXaxis()->SetTitle("Frequency [Hz]");
-    for (const auto v : mStfFreqSamples)
+    for (const auto v : mStfFreqSamples) {
       lStfFreqHist.Fill(v);
+    }
 
     mGui->Canvas().cd(2);
     lStfFreqHist.Draw();
 
-    TH1F lStfDataTimeHist("StfChanTimeH", "STF on-channel time", 200, 0.0, 30.0);
+    TH1F lStfDataTimeHist("StfChanTimeH", "STF on-channel time", 100, 0.0, 20.0);
     lStfDataTimeHist.GetXaxis()->SetTitle("Time [ms]");
-    for (const auto v : mStfDataTimeSamples)
+    for (const auto v : mStfDataTimeSamples) {
       lStfDataTimeHist.Fill(v);
+    }
 
     mGui->Canvas().cd(3);
     lStfDataTimeHist.Draw();
@@ -253,7 +281,7 @@ void StfBuilderDevice::GuiThread()
 bool StfBuilderDevice::ConditionalRun()
 {
   // nothing to do here sleep for awhile
-  std::this_thread::sleep_for(500ms);
+  std::this_thread::sleep_for(1s);
   return true;
 }
 

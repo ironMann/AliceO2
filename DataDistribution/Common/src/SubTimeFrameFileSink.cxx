@@ -42,7 +42,7 @@ void SubTimeFrameFileSink::stop()
 
 bpo::options_description SubTimeFrameFileSink::getProgramOptions()
 {
-  bpo::options_description lSinkDesc("(Sub)TimeFrame file sink options");
+  bpo::options_description lSinkDesc("(Sub)TimeFrame file sink options", 120);
 
   lSinkDesc.add_options()
   (

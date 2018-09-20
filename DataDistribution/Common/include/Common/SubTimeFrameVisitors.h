@@ -13,13 +13,11 @@
 
 #include "Common/SubTimeFrameDataModel.h"
 
-
 #include <Headers/DataHeader.h>
-
-class O2Device;
 
 #include <vector>
 
+class O2Device;
 class FairMQChannel;
 
 namespace o2 {

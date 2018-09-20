@@ -28,6 +28,13 @@ using namespace std::chrono_literals;
 
 void StfSenderOutput::start(std::uint32_t pEpnCnt)
 {
+  // create scheduler thread
+  mSchedulerThread = std::thread(&StfSenderOutput::StfSchedulerThread, this);
+
+  if (mDevice.standalone()) {
+    return;
+  }
+
   if (!mDevice.CheckCurrentState(StfSenderDevice::RUNNING)) {
     LOG(WARN) << "Not creating interface threads. StfSenderDevice is not running.";
     return;
@@ -45,13 +52,19 @@ void StfSenderOutput::start(std::uint32_t pEpnCnt)
       std::thread(&StfSenderOutput::DataHandlerThread, this, tid)
     );
   }
-
-  // create scheduler thread
-  mSchedulerThread = std::thread(&StfSenderOutput::StfSchedulerThread, this);
 }
 
 void StfSenderOutput::stop()
 {
+  // stop the scheduler
+  if (mSchedulerThread.joinable()) {
+      mSchedulerThread.join();
+  }
+
+  if (mDevice.standalone()) {
+    return;
+  }
+
   // stop all queues
   for (auto &lIdQueue : mStfQueues) {
     lIdQueue.stop();
@@ -59,11 +72,6 @@ void StfSenderOutput::stop()
 
   // release cond variable
   mSendSlotCond.notify_all();
-
-  // stop the scheduler
-  if (mSchedulerThread.joinable()) {
-      mSchedulerThread.join();
-    }
 
   // wait for threads to exit
   for (auto &lIdThread : mOutputThreads) {
@@ -83,34 +91,31 @@ bool StfSenderOutput::running() const
 
 void StfSenderOutput::StfSchedulerThread()
 {
+  // queue the Stf to the appropriate EPN queue
   std::unique_ptr<SubTimeFrame> lStf;
 
   while ((lStf = mDevice.dequeue(eSenderIn)) != nullptr)  {
-
     const TimeFrameIdType lStfId = lStf->header().mId;
 
-    { // rate-limited LOG: print stats every 100 TFs
-      static unsigned long floodgate = 0;
-      if (++floodgate % 100 == 1) {
-        LOG(DEBUG) << "TF[" << lStfId << "] size: " << lStf->getDataSize();
-      }
+    if (mDevice.standalone()) {
+      // Do not forward STFs
+      continue;
     }
 
     // Send STF to one of the EPNs (round-robin on STF ID)
     std::unique_lock<std::mutex> lLock(mSendSlotLock);
     while (mNumSendSlots == 0 && running()) {
-      // failsafe to check for exit signal: stop wainting when lambda returns false
-      if (std::cv_status::timeout == mSendSlotCond.wait_for(lLock, 1s)) {
-        if (!running()) {
-          break;
-        }
-      }
+      // failsafe to check for exit signal
+      std::cv_status::timeout == mSendSlotCond.wait_for(lLock, 1s);
     }
+
+    // check for the exit signal
+    if (!running()) {
+      break;
+    }
+
     // use up one send slot
     mNumSendSlots--;
-
-    // queue the Stf to the appropriate EPN queue
-    assert(mDevice.getEpnNodeCount() > 0);
 
     const auto lTargetEpn = lStfId % mDevice.getEpnNodeCount();
     PushStf(lTargetEpn, std::move(lStf));

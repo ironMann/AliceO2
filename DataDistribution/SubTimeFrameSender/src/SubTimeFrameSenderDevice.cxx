@@ -44,6 +44,12 @@ void StfSenderDevice::InitTask()
   mOutputChannelName = GetConfig()->GetValue<std::string>(OptionKeyOutputChannelName);
   mEpnNodeCount = GetConfig()->GetValue<std::uint32_t>(OptionKeyEpnNodeCount);
 
+  // equivalent options
+  if (mEpnNodeCount == 0 || mStandalone) {
+    mEpnNodeCount == 0;
+    mStandalone = true;
+  }
+
   // Buffering limitation
   if (mMaxStfsInPipeline > 0) {
     if (mMaxStfsInPipeline < 4) {
@@ -76,9 +82,9 @@ void StfSenderDevice::InitTask()
 void StfSenderDevice::PreRun()
 {
   // Start output handler
-  if (!standalone()) {
-    mOutputHandler.start(mEpnNodeCount);
-  }
+  // NOTE: required even in standalone operation
+  mOutputHandler.start(mEpnNodeCount);
+
   // start file sink
   if (mFileSink.enabled()) {
     mFileSink.start();
@@ -103,9 +109,7 @@ void StfSenderDevice::PostRun()
   }
 
   // Stop output handler
-  if (!standalone()) {
-    mOutputHandler.stop();
-  }
+  mOutputHandler.stop();
 
   LOG(INFO) << "PostRun done... ";
 }
@@ -130,12 +134,6 @@ void StfSenderDevice::StfReceiverThread()
 
     queue(eReceiverOut, std::move(lStf));
 
-    // // Send STF to one of the EPNs (round-robin on STF ID)
-    // if (mEpnNodeCount > 0) {
-    //   const auto lTargetEpn = lStfId % mEpnNodeCount;
-
-    //   mOutputHandler.PushStf(lTargetEpn, std::move(lStf));
-    // }
   }
 
   LOG(INFO) << "Exiting StfOutputThread...";

@@ -11,7 +11,7 @@
     <property id="sender-stf-channel" />
 
     <decltask id="Readout"> <!-- Readout -->
-        <exe reachable="true">$INFOLOGGER_ROOT/bin/readout.exe file://$O2_ROOT/bin/config/readout_emu.cfg</exe>
+        <exe reachable="true">$READOUT_ROOT/bin/readout.exe file://$O2_ROOT/bin/config/readout_emu.cfg</exe>
     </decltask>
 
     <decltask id="SubTimeFrameBuilder"> <!-- SubTimeFrameBuilder to run with Readout -->

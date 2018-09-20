@@ -1,31 +1,21 @@
 # Data Distribution
 
 
-Data Distribution O2Devices implementing SubTimeFrame building and data distribution tasks.
+Data Distribution O2 devices (processes) implement SubTimeFrame building on FLPs, and TimeFrame aggregation on EPNs.
 
-## Demonstrator chain
+## Components
 
-The chain starts with a `ReadoutDevice` (currently emulated) which produces HBFrames. Next in chain is `SubTimeFrameBuilderDevice`, which collects HBFrames belonging to the same SubTimeFrames. The final device in the chain is `SubTimeFrameTransporterDevice`, which is responsible for transporting the data to the EPN (to be implemented) and free the resources of the transported STF (readout buffers, shared memory allocated in the local processing, etc).
+Three components of the data distribution chain are:
 
-## Interfaces and data model
-
-Readout process(es) send collections of STFrames when they become available (e.g. when a CRU superpage is completely filled). The exchange is implemented in the `StfInputInterface` class. `SubTimeFrameBuilder` device uses an object of `SubTimeFrame` class to track all HBFrames of the same STF. When the STF is built, it's sent to the next device in the chain using objects implementing visitor pattern (e.g. a pair of `InterleavedHdrDataSerializer` and `InterleavedHdrDataDeserializer` objects). These objects enumerate all data and headers of the STF, collecting all FairMQ messages for sending. Since all STF data is allocated in SHM the STF moving process is zero-copy.
+- `SubTimeFrameBuilderDevice` (FLP): The first device in the chain. It receives readout data and once all inputs for an STF are received, forwards the STF into DPL or directly to `SubTimeFrameSenderDevice`
+- `SubTimeFrameSenderDevice` (FLP):  Receives STF data and related results of local processing on FLP and performs TimeFrame aggregating.
+- `TimeFrameBuilderDevice` (EPN): Receives STFs from all `SubTimeFrameSenderDevice`, creates a full TimeFrame and forwards it to global processing.
 
 ## Running with the Readout CRU emulator
 
-Make sure the Readout module is loaded in the environment.
-Run the chain with the `bin/startFLPReadoutDataDistEMU.sh` script.
-O2Device channel configuration is in `readout-flp-chain-emu.json`. Configuration for the readout process is in `readout_emu.cfg`. For configuration options please refer to `[consumer-fmq-wp5]`, `[equipment-emulator-1]`, and `[equipment-emulator-2]` sections.
-To enable testing with two CRU emulators, set the option `[equipment-emulator-2]::enabled` to `1`.
+Make sure the Readout module is loaded in the environment (make sure the `readout.exe` executable exists).
 
+Run the chain with the `bin/start_Emulator-3FLP-3EPN.sh` script. The script supports running up to 3 independent FLP chains (CRU emulator, SufBuilder, StfSender) and up to 3 EPN TfBuilders on a local machine.
+For supported options pass `--help` to the start script.
 
-## Running the O2 HBF emulator (deprecated)
-
-O2Device channel configuration can be found in `readout-flp-chain.json`. The current configuration uses shared memory channels for all devices on the FLPs. To run the chain, please refer to `startReadoutFLPChain.sh` script.
-Options:
- - `STF_BLD_NO_INPUTS`: the number of CRU readout processes. Can be set to 1 or 2
- - `EQUIPMENT_CNT`: this parameter determines how many independent HBFrame streams is being produced per CRU.
- - `EQUIPMENT_BITS_PER_S`: average data rate of each DMA stream
- - `DATA_REGION_SIZE`: Size of Shared Memory region used by a single CRU (decrease for small-scale testing)
- - `SUPERPAGE_SIZE`: (CRU emulator internal) superpage size
- - `DMA_CHUNK_SIZE`: (CRU emulator internal) DMA engine native block size. When set to zero the CRU emulator always produces contiguous HBFrames.
+O2Device channel configuration is in `bin/config/readout-emu-flp-epn-chain.json`.  If using CRU emulation mode of the `readout.exe` process, configuration of the emulator is read from `bin/config/readout_cfg/readout_emu.cfg`, sections `[consumer-fmq-wp5]`, `[equipment-emulator-1]`, and `[equipment-emulator-2]`. To enable testing with two equipments, set the `[equipment-emulator-2]::enabled`  option to `1`.

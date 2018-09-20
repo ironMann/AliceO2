@@ -41,6 +41,17 @@
                                 "address": "ipc:///tmp/stf-builder-pipe-0"
                             }
                         ]
+                    },
+                    {
+                        "name": "dpl-stf-channel",
+                        "transport": "shmem",
+                        "sockets": [
+                            {
+                                "type": "pair",
+                                "method": "bind",
+                                "address": "ipc:///tmp/stf-builder-dpl-pipe-0"
+                            }
+                        ]
                     }
                 ]
             },
@@ -82,8 +93,6 @@
                 ]
             },
 
-
-
             {
                 "id": "readout-1",
                 "channels": [
@@ -122,6 +131,17 @@
                                 "type": "pair",
                                 "method": "bind",
                                 "address": "ipc:///tmp/stf-builder-pipe-1"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "dpl-stf-channel",
+                        "transport": "shmem",
+                        "sockets": [
+                            {
+                                "type": "pair",
+                                "method": "bind",
+                                "address": "ipc:///tmp/stf-builder-dpl-pipe-1"
                             }
                         ]
                     }
@@ -165,8 +185,6 @@
                 ]
             },
 
-
-
             {
                 "id": "readout-2",
                 "channels": [
@@ -205,6 +223,17 @@
                                 "type": "pair",
                                 "method": "bind",
                                 "address": "ipc:///tmp/stf-builder-pipe-2"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "dpl-stf-channel",
+                        "transport": "shmem",
+                        "sockets": [
+                            {
+                                "type": "pair",
+                                "method": "bind",
+                                "address": "ipc:///tmp/stf-builder-dpl-pipe-2"
                             }
                         ]
                     }
@@ -247,22 +276,6 @@
                     }
                 ]
             },
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

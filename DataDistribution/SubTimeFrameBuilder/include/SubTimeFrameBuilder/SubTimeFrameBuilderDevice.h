@@ -58,12 +58,12 @@ public:
 
   static constexpr const char* OptionKeyInputChannelName = "input-channel-name";
   static constexpr const char* OptionKeyOutputChannelName = "output-channel-name";
+  static constexpr const char* OptionKeyDplChannelName = "dpl-channel-name";
   static constexpr const char* OptionKeyStandalone = "stand-alone";
   static constexpr const char* OptionKeyMaxBufferedStfs = "max-buffered-stfs";
-
   static constexpr const char* OptionKeyCruCount = "cru-count";
-
   static constexpr const char* OptionKeyGui = "gui";
+  static constexpr const char* OptionKeyDpl = "enable-dpl";
 
   /// Default constructor
   StfBuilderDevice();
@@ -75,6 +75,7 @@ public:
 
   const std::string& getInputChannelName() const { return mInputChannelName; }
   const std::string& getOutputChannelName() const { return mOutputChannelName; }
+  const std::string& getDplChannelName() const { return mDplChannelName; }
 
 protected:
   void PreRun() final;
@@ -92,6 +93,9 @@ protected:
         if (mPipelineLimit && (lNumStfs > mMaxStfsInPipeline)) {
           mNumStfs--;
           lNextStage = eStfNullIn;
+          LOG(WARNING) << "Dropping an STF due to reaching the maximum number of buffered "
+                          "STFs in the process (" << mMaxStfsInPipeline << "). Consider "
+                          "increasing the limit, or reduce the data pressure.";
         } else {
           lNextStage = mFileSink.enabled() ? eStfFileSinkIn : eStfSendIn;
         }
@@ -117,7 +121,9 @@ protected:
   /// config
   std::string mInputChannelName;
   std::string mOutputChannelName;
+  std::string mDplChannelName;
   bool mStandalone;
+  bool mDplEnabled;
   std::int64_t mMaxStfsInPipeline;
   bool mPipelineLimit;
   std::uint64_t mCruCount;

@@ -130,20 +130,6 @@ set(_boost_incdir)
 set(_fairmq_incdir)
 
 o2_define_bucket(
-    NAME
-    DataDistributionCommon_bucket
-
-    DEPENDENCIES
-    Headers
-    O2Device
-    Boost::container
-
-    INCLUDE_DIRECTORIES
-    ${CMAKE_SOURCE_DIR}/Utilities/DataDistribution/Common/include
-    ${MS_GSL_INCLUDE_DIR}
-)
-
-o2_define_bucket(
   NAME
   glfw_bucket
 
@@ -2280,4 +2266,20 @@ o2_define_bucket(
     common_boost_bucket
 
     INCLUDE_DIRECTORIES
+)
+
+
+o2_define_bucket(
+    NAME
+    DataDistributionBase_bucket
+
+    DEPENDENCIES
+    Headers
+    O2Device
+    common_boost_bucket
+    Boost::container
+
+    INCLUDE_DIRECTORIES
+    ${CMAKE_SOURCE_DIR}/DataDistribution/Common/include
+    ${MS_GSL_INCLUDE_DIR}
 )

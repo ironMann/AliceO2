@@ -34,8 +34,9 @@ void StfInputInterface::Start(unsigned pCnt)
 
   assert(mInputThreads.size() == 0);
 
-  for (auto tid = 0; tid < pCnt; tid++) // tid matches input channel index
+  for (auto tid = 0; tid < pCnt; tid++) { // tid matches input channel index
     mInputThreads.emplace_back(std::thread(&StfInputInterface::DataHandlerThread, this, tid));
+  }
 }
 
 void StfInputInterface::Stop()
