@@ -20,8 +20,10 @@
 #include <vector>
 #include <deque>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// DataOriginSplitter
@@ -35,7 +37,7 @@ void DataIdentifierSplitter::visit(SubTimeFrame& pStf)
     mSubTimeFrame = std::move(pStf);
   } else if (mDataIdentifier.dataDescription == gDataDescriptionAny) {
     // filter any source with requested origin
-    for (auto &lKeyData : pStf.mData) {
+    for (auto& lKeyData : pStf.mData) {
       const DataIdentifier& lIden = lKeyData.first;
       if (lIden.dataOrigin == mDataIdentifier.dataOrigin) {
         // use the equipment identifier of the object
@@ -46,7 +48,7 @@ void DataIdentifierSplitter::visit(SubTimeFrame& pStf)
 
   } else {
     /* find the exact match */
-    for (auto &lKeyData : pStf.mData) {
+    for (auto& lKeyData : pStf.mData) {
       const DataIdentifier& lIden = lKeyData.first;
       if (lIden == mDataIdentifier) {
         // use the equipment identifier of the object
@@ -57,10 +59,9 @@ void DataIdentifierSplitter::visit(SubTimeFrame& pStf)
   }
 
   // erase forked elements
-  for (auto &lIden : lToErase)
+  for (auto& lIden : lToErase)
     pStf.mData.erase(lIden);
 }
-
 
 SubTimeFrame DataIdentifierSplitter::split(SubTimeFrame& pStf, const DataIdentifier& pDataIdent)
 {
@@ -71,7 +72,5 @@ SubTimeFrame DataIdentifierSplitter::split(SubTimeFrame& pStf, const DataIdentif
 
   return std::move(mSubTimeFrame);
 }
-
-
 }
 } /* o2::DataDistribution */

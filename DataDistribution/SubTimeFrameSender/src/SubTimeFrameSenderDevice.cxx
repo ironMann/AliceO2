@@ -18,16 +18,18 @@
 #include <chrono>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 using namespace std::chrono_literals;
 
 StfSenderDevice::StfSenderDevice()
-: O2Device(),
-  IFifoPipeline(ePipelineSize),
-  mFileSink(*this, *this, eFileSinkIn, eFileSinkOut),
-  mOutputHandler(*this)
+  : O2Device(),
+    IFifoPipeline(ePipelineSize),
+    mFileSink(*this, *this, eFileSinkIn, eFileSinkOut),
+    mOutputHandler(*this)
 {
 }
 
@@ -117,12 +119,12 @@ void StfSenderDevice::PostRun()
 void StfSenderDevice::StfReceiverThread()
 {
   static auto sStartTime = std::chrono::high_resolution_clock::now();
-  auto &lInputChan = GetChannel(mInputChannelName, 0);
+  auto& lInputChan = GetChannel(mInputChannelName, 0);
 
   InterleavedHdrDataDeserializer lStfReceiver;
   std::unique_ptr<SubTimeFrame> lStf;
 
-  while ((lStf = lStfReceiver.deserialize(lInputChan)) != nullptr)  {
+  while ((lStf = lStfReceiver.deserialize(lInputChan)) != nullptr) {
 
     const TimeFrameIdType lStfId = lStf->header().mId;
 
@@ -133,7 +135,6 @@ void StfSenderDevice::StfReceiverThread()
     }
 
     queue(eReceiverOut, std::move(lStf));
-
   }
 
   LOG(INFO) << "Exiting StfOutputThread...";
@@ -145,6 +146,5 @@ bool StfSenderDevice::ConditionalRun()
   std::this_thread::sleep_for(500ms);
   return true;
 }
-
 }
 } /* namespace o2::DataDistribution */

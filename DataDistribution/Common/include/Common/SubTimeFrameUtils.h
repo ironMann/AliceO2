@@ -17,26 +17,27 @@
 
 class O2Device;
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// DataOriginSplitter
 ////////////////////////////////////////////////////////////////////////////////
 
-class DataIdentifierSplitter : public ISubTimeFrameVisitor {
-public:
+class DataIdentifierSplitter : public ISubTimeFrameVisitor
+{
+ public:
   DataIdentifierSplitter() = default;
   SubTimeFrame split(SubTimeFrame& pStf, const DataIdentifier& pDataIdent);
 
-private:
+ private:
   void visit(SubTimeFrame& pStf) override;
 
   DataIdentifier mDataIdentifier;
   SubTimeFrame mSubTimeFrame;
 };
-
-
 }
 } /* o2::DataDistribution */
 

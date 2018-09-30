@@ -17,8 +17,10 @@
 #include <chrono>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 void CruLinkEmulator::linkReadoutThread()
 {
@@ -52,8 +54,9 @@ void CruLinkEmulator::linkReadoutThread()
   while (mRunning) {
 
     const auto lStfToSend = (std::chrono::duration_cast<std::chrono::microseconds>(
-      std::chrono::high_resolution_clock::now() - start
-      ) / cStfTimeUs) - lSentStf;
+                               std::chrono::high_resolution_clock::now() - start) /
+                             cStfTimeUs) -
+                            lSentStf;
 
     if (lStfToSend <= 0) {
       std::this_thread::sleep_for(cStfTimeUs);
@@ -72,7 +75,7 @@ void CruLinkEmulator::linkReadoutThread()
 
       while (lHbfToSend > 0) {
         if (!lSuperpages.empty()) {
-          CRUSuperpage sp{std::move(lSuperpages.front())};
+          CRUSuperpage sp{ std::move(lSuperpages.front()) };
           lSuperpages.pop_front();
 
           // Enumerate valid data and create work-item for STFBuilder
@@ -93,8 +96,8 @@ void CruLinkEmulator::linkReadoutThread()
 
             linkO2Data.mLinkRawData.emplace_back(CruDmaPacket{
               mMemHandler->getDataRegion(),
-              sp.mDataVirtualAddress + (d * mDmaChunkSize), // Valid data DMA Chunk <superpage offset + length>
-              mDmaChunkSize - (rand() % (mDmaChunkSize/10)) // This should be taken from desc->mRawDataSize (filled by the CRU)
+              sp.mDataVirtualAddress + (d * mDmaChunkSize),   // Valid data DMA Chunk <superpage offset + length>
+              mDmaChunkSize - (rand() % (mDmaChunkSize / 10)) // This should be taken from desc->mRawDataSize (filled by the CRU)
             });
           }
 

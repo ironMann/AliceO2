@@ -8,7 +8,6 @@
 // granted to it by virtue of its status as an Intergovernmental Organization
 // or submit itself to any jurisdiction.
 
-
 #include "TimeFrameBuilder/TimeFrameBuilderInput.h"
 #include "TimeFrameBuilder/TimeFrameBuilderDevice.h"
 
@@ -25,8 +24,10 @@
 #include <thread>
 #include <chrono>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 void TfBuilderInput::Start(unsigned int pNumFlp)
 {
@@ -38,7 +39,7 @@ void TfBuilderInput::Start(unsigned int pNumFlp)
   assert(mInputThreads.size() == 0);
 
   // start receiver threads
-  for (auto tid = 0; tid < pNumFlp; tid++) {// tid matches input channel index
+  for (auto tid = 0; tid < pNumFlp; tid++) { // tid matches input channel index
     mInputThreads.emplace_back(std::thread(&TfBuilderInput::DataHandlerThread, this, tid));
   }
 
@@ -57,7 +58,7 @@ void TfBuilderInput::Stop()
   assert(!mDevice.CheckCurrentState(TfBuilderDevice::RUNNING));
 
   // Wait for input threads to stop
-  for (auto &lIdThread : mInputThreads) {
+  for (auto& lIdThread : mInputThreads) {
     if (lIdThread.joinable())
       lIdThread.join();
   }
@@ -79,7 +80,7 @@ void TfBuilderInput::Stop()
 void TfBuilderInput::DataHandlerThread(const std::uint32_t pFlpIndex)
 {
   // Reference to the input channel
-  auto &lInputChan = mDevice.GetChannel(mDevice.getInputChannelName(), pFlpIndex);
+  auto& lInputChan = mDevice.GetChannel(mDevice.getInputChannelName(), pFlpIndex);
 
   // Deserialization object
   InterleavedHdrDataDeserializer lStfReceiver;
@@ -162,11 +163,9 @@ void TfBuilderInput::StfMergerThread()
 
       LOG(WARN) << "Dropping oldest incomplete TF... (" << lDroppedStfs << " STFs)";
     }
-
   }
 
   LOG(INFO) << "Exiting STF merger thread...";
 }
-
 }
 } /* namespace o2::DataDistribution */

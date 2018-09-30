@@ -8,7 +8,6 @@
 // granted to it by virtue of its status as an Intergovernmental Organization
 // or submit itself to any jurisdiction.
 
-
 #include "SubTimeFrameSender/SubTimeFrameSenderOutput.h"
 #include "SubTimeFrameSender/SubTimeFrameSenderDevice.h"
 
@@ -21,8 +20,10 @@
 #include <condition_variable>
 #include <stdexcept>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 using namespace std::chrono_literals;
 
@@ -49,8 +50,7 @@ void StfSenderOutput::start(std::uint32_t pEpnCnt)
   for (auto tid = 0; tid < pEpnCnt; tid++) {
     // tid matches output channel index (EPN idx)
     mOutputThreads.emplace_back(
-      std::thread(&StfSenderOutput::DataHandlerThread, this, tid)
-    );
+      std::thread(&StfSenderOutput::DataHandlerThread, this, tid));
   }
 }
 
@@ -58,7 +58,7 @@ void StfSenderOutput::stop()
 {
   // stop the scheduler
   if (mSchedulerThread.joinable()) {
-      mSchedulerThread.join();
+    mSchedulerThread.join();
   }
 
   if (mDevice.standalone()) {
@@ -66,7 +66,7 @@ void StfSenderOutput::stop()
   }
 
   // stop all queues
-  for (auto &lIdQueue : mStfQueues) {
+  for (auto& lIdQueue : mStfQueues) {
     lIdQueue.stop();
   }
 
@@ -74,7 +74,7 @@ void StfSenderOutput::stop()
   mSendSlotCond.notify_all();
 
   // wait for threads to exit
-  for (auto &lIdThread : mOutputThreads) {
+  for (auto& lIdThread : mOutputThreads) {
     if (lIdThread.joinable()) {
       lIdThread.join();
     }
@@ -94,7 +94,7 @@ void StfSenderOutput::StfSchedulerThread()
   // queue the Stf to the appropriate EPN queue
   std::unique_ptr<SubTimeFrame> lStf;
 
-  while ((lStf = mDevice.dequeue(eSenderIn)) != nullptr)  {
+  while ((lStf = mDevice.dequeue(eSenderIn)) != nullptr) {
     const TimeFrameIdType lStfId = lStf->header().mId;
 
     if (mDevice.standalone()) {
@@ -127,7 +127,7 @@ void StfSenderOutput::StfSchedulerThread()
 /// Receiving thread
 void StfSenderOutput::DataHandlerThread(const std::uint32_t pEpnIdx)
 {
-  auto &lOutputChan = mDevice.GetChannel(mDevice.getOutputChannelName(), pEpnIdx);
+  auto& lOutputChan = mDevice.GetChannel(mDevice.getOutputChannelName(), pEpnIdx);
 
   LOG(INFO) << "StfSenderOutput[" << pEpnIdx << "]: Starting the thread";
 
@@ -165,6 +165,5 @@ void StfSenderOutput::DataHandlerThread(const std::uint32_t pEpnIdx)
 
   LOG(INFO) << "Exiting StfSenderOutput[" << pEpnIdx << "]";
 }
-
 }
 } /* o2::DataDistribution */

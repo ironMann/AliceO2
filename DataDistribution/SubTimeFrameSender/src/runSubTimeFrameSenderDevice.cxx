@@ -18,42 +18,29 @@ namespace bpo = boost::program_options;
 
 void addCustomOptions(bpo::options_description& options)
 {
-  options.add_options()
-    (
-      o2::DataDistribution::StfSenderDevice::OptionKeyInputChannelName,
-      bpo::value<std::string>()->default_value("builder-stf-channel"),
-      "Name of the input STF channel"
-    )
-    (
-      o2::DataDistribution::StfSenderDevice::OptionKeyStandalone,
-      bpo::bool_switch()->default_value(false),
-      "Standalone operation. SubTimeFrames will not be forwarded to other processes."
-    )
-    (
-      o2::DataDistribution::StfSenderDevice::OptionKeyMaxBufferedStfs,
-      bpo::value<std::int64_t>()->default_value(-1),
-      "Maximum number of buffered SubTimeFrames before starting to drop data. "
-      "Unlimited: -1."
-    )
-    (
-      o2::DataDistribution::StfSenderDevice::OptionKeyOutputChannelName,
-      bpo::value<std::string>()->default_value("sender-stf-channel"),
-      "Name of the output STF channel"
-    )
-    (
-      o2::DataDistribution::StfSenderDevice::OptionKeyEpnNodeCount,
-      bpo::value<std::uint32_t>()->default_value(std::uint32_t(0)),
-      "Number of EPN nodes"
-    )
-    (
-      o2::DataDistribution::StfSenderDevice::OptionKeyMaxConcurrentSends,
-      bpo::value<std::int64_t>()->default_value(-1),
-      "Maximum number of concurrent transfers from FLP to EPNs. Unlimited: -1."
-    )
-    ;
+  options.add_options()(
+    o2::DataDistribution::StfSenderDevice::OptionKeyInputChannelName,
+    bpo::value<std::string>()->default_value("builder-stf-channel"),
+    "Name of the input STF channel")(
+    o2::DataDistribution::StfSenderDevice::OptionKeyStandalone,
+    bpo::bool_switch()->default_value(false),
+    "Standalone operation. SubTimeFrames will not be forwarded to other processes.")(
+    o2::DataDistribution::StfSenderDevice::OptionKeyMaxBufferedStfs,
+    bpo::value<std::int64_t>()->default_value(-1),
+    "Maximum number of buffered SubTimeFrames before starting to drop data. "
+    "Unlimited: -1.")(
+    o2::DataDistribution::StfSenderDevice::OptionKeyOutputChannelName,
+    bpo::value<std::string>()->default_value("sender-stf-channel"),
+    "Name of the output STF channel")(
+    o2::DataDistribution::StfSenderDevice::OptionKeyEpnNodeCount,
+    bpo::value<std::uint32_t>()->default_value(std::uint32_t(0)),
+    "Number of EPN nodes")(
+    o2::DataDistribution::StfSenderDevice::OptionKeyMaxConcurrentSends,
+    bpo::value<std::int64_t>()->default_value(-1),
+    "Maximum number of concurrent transfers from FLP to EPNs. Unlimited: -1.");
 
-    // Add options for STF file sink
-    options.add(o2::DataDistribution::SubTimeFrameFileSink::getProgramOptions());
+  // Add options for STF file sink
+  options.add(o2::DataDistribution::SubTimeFrameFileSink::getProgramOptions());
 }
 
 FairMQDevicePtr getDevice(const FairMQProgOptions& /*config*/)

@@ -22,11 +22,14 @@
 #include <deque>
 #include <condition_variable>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
-class ReadoutDevice : public Base::O2Device {
-public:
+class ReadoutDevice : public Base::O2Device
+{
+ public:
   static constexpr const char* OptionKeyOutputChannelName = "output-channel-name";
 
   static constexpr const char* OptionKeyReadoutDataRegionSize = "data-shm-region-size";
@@ -48,7 +51,7 @@ public:
 
   void InitTask() final;
 
-protected:
+ protected:
   bool ConditionalRun() final;
   void PreRun() final;
   void PostRun() final;

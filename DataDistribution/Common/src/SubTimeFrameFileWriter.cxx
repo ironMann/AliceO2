@@ -15,14 +15,16 @@
 
 #include <gsl/gsl_util>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameFileWriter
 ////////////////////////////////////////////////////////////////////////////////
 
-SubTimeFrameFileWriter::SubTimeFrameFileWriter(const boost::filesystem::path &pFileName, bool pWriteInfo)
+SubTimeFrameFileWriter::SubTimeFrameFileWriter(const boost::filesystem::path& pFileName, bool pWriteInfo)
   : mWriteInfo(pWriteInfo)
 {
   using ios = std::ios_base;
@@ -60,7 +62,7 @@ SubTimeFrameFileWriter::SubTimeFrameFileWriter(const boost::filesystem::path &pF
       mInfoFile << "DATA_OFFSET ";
       mInfoFile << "DATA_SIZE" << '\n';
     }
-  } catch(std::ifstream::failure &eOpenErr) {
+  } catch (std::ifstream::failure& eOpenErr) {
     LOG(ERROR) << "Failed to open/create TF file for writing. Error: " << eOpenErr.what();
     throw eOpenErr;
   }
@@ -73,9 +75,9 @@ SubTimeFrameFileWriter::~SubTimeFrameFileWriter()
     if (mWriteInfo) {
       mInfoFile.close();
     }
-  } catch(std::ifstream::failure &eCloseErr) {
+  } catch (std::ifstream::failure& eCloseErr) {
     LOG(ERROR) << "Closing TF file failed. Error: " << eCloseErr.what();
-  } catch(...) {
+  } catch (...) {
     LOG(ERROR) << "Closing TF file failed.";
   }
 }
@@ -93,11 +95,11 @@ void SubTimeFrameFileWriter::visit(const SubTimeFrame& pStf)
   //  sizes for different equipment identifiers
   std::map<DataIdentifier, std::uint64_t> lDataIdSize;
 
-  for (const auto &lEquip : lEquipIds) {
+  for (const auto& lEquip : lEquipIds) {
 
-    const auto &lEquipDataVec = pStf.mData.at(lEquip).at(lEquip.mSubSpecification);
+    const auto& lEquipDataVec = pStf.mData.at(lEquip).at(lEquip.mSubSpecification);
 
-    for (const auto &lData : lEquipDataVec) {
+    for (const auto& lData : lEquipDataVec) {
       // NOTE: get only pointers to <hdr, data> struct
       mStfData.emplace_back(&lData);
       // account the size
@@ -114,9 +116,9 @@ void SubTimeFrameFileWriter::visit(const SubTimeFrame& pStf)
   // build the index
   {
     std::uint64_t lCurrOff = 0;
-    for (const auto &lId : lEquipIds) {
+    for (const auto& lId : lEquipIds) {
       const auto lIdSize = lDataIdSize[lId];
-      assert (lIdSize > sizeof(DataHeader));
+      assert(lIdSize > sizeof(DataHeader));
       mStfDataIndex.AddStfElement(lId, lCurrOff, lIdSize);
       lCurrOff += lIdSize;
     }
@@ -128,17 +130,16 @@ template <
   typename = std::enable_if_t<std::is_pointer<pointer>::value>,
   typename = std::enable_if_t<
     std::is_void<std::remove_pointer_t<pointer>>::value ||
-    std::is_standard_layout<std::remove_pointer_t<pointer>>::value>
->
+    std::is_standard_layout<std::remove_pointer_t<pointer>>::value>>
 void SubTimeFrameFileWriter::buffered_write(const pointer p, std::streamsize pCount)
 {
   using value_type = std::conditional_t<std::is_void<std::remove_pointer_t<pointer>>::value,
-    char,
-    std::remove_pointer_t<pointer>>;
+                                        char,
+                                        std::remove_pointer_t<pointer>>;
   // make sure we're not doing a short write
   assert((pCount % sizeof(value_type) == 0) && "Performing short write?");
 
-  const char *lPtr = reinterpret_cast<const char*>(p);
+  const char* lPtr = reinterpret_cast<const char*>(p);
   // avoid the optimization if the write is large enough
   if (pCount >= sBuffSize) {
     mFile.write(lPtr, pCount);
@@ -146,7 +147,7 @@ void SubTimeFrameFileWriter::buffered_write(const pointer p, std::streamsize pCo
     // split the write to smaller chunks
     while (pCount > 0) {
       const auto lToWrite = std::min(pCount, sChunkSize);
-      assert (lToWrite > 0 && lToWrite <= sChunkSize && lToWrite <= pCount);
+      assert(lToWrite > 0 && lToWrite <= sChunkSize && lToWrite <= pCount);
 
       mFile.write(lPtr, lToWrite);
       lPtr += lToWrite;
@@ -170,7 +171,7 @@ std::uint64_t SubTimeFrameFileWriter::write(const SubTimeFrame& pStf)
     mStfSize = 0;
   });
 
-  if(!mFile.good()) {
+  if (!mFile.good()) {
     LOG(WARNING) << "Error while writing a TF to file. (bad stream state)";
     return std::uint64_t(0);
   }
@@ -185,7 +186,6 @@ std::uint64_t SubTimeFrameFileWriter::write(const SubTimeFrame& pStf)
 
   SubTimeFrameFileMeta lStfFileMeta(lStfSizeInFile);
 
-
   try {
     // Write DataHeader + SubTimeFrameFileMeta
     mFile << lStfFileMeta;
@@ -195,7 +195,7 @@ std::uint64_t SubTimeFrameFileWriter::write(const SubTimeFrame& pStf)
 
     lDataOffset = size(); // save for the info file
 
-    for (const auto &lStfData : mStfData) {
+    for (const auto& lStfData : mStfData) {
       buffered_write(lStfData->mHeader->GetData(), lStfData->mHeader->GetSize());
       buffered_write(lStfData->mData->GetData(), lStfData->mData->GetSize());
     }
@@ -203,7 +203,7 @@ std::uint64_t SubTimeFrameFileWriter::write(const SubTimeFrame& pStf)
     // flush the buffer and check the state
     mFile.flush();
 
-  } catch(const std::ios_base::failure& eFailExc) {
+  } catch (const std::ios_base::failure& eFailExc) {
     LOG(ERROR) << "Writing to file failed. Error: " << eFailExc.what();
     return std::uint64_t(0);
   }
@@ -217,12 +217,12 @@ std::uint64_t SubTimeFrameFileWriter::write(const SubTimeFrame& pStf)
       const auto l2StfFileOff = lPrevSize;
       const auto l3StfFileSize = lStfSizeInFile;
 
-      for (const auto &lStfData : mStfData) {
+      for (const auto& lStfData : mStfData) {
         DataHeader lDH;
         std::memcpy(&lDH, lStfData->mHeader->GetData(), sizeof(DataHeader));
 
-        const auto &l4DataOrigin = lDH.dataOrigin;
-        const auto &l5DataDescription = lDH.dataDescription;
+        const auto& l4DataOrigin = lDH.dataOrigin;
+        const auto& l5DataDescription = lDH.dataDescription;
         const auto l6SubSpec = lDH.subSpecification;
 
         const auto l7HdrOff = lDataOffset;
@@ -244,7 +244,7 @@ std::uint64_t SubTimeFrameFileWriter::write(const SubTimeFrame& pStf)
         mInfoFile << l10DataSize << sSidecarRecordSep;
       }
       mInfoFile.flush();
-    } catch(const std::ios_base::failure& eFailExc) {
+    } catch (const std::ios_base::failure& eFailExc) {
       LOG(ERROR) << "Writing to file failed. Error: " << eFailExc.what();
       return std::uint64_t(0);
     }
@@ -252,6 +252,5 @@ std::uint64_t SubTimeFrameFileWriter::write(const SubTimeFrame& pStf)
 
   return std::uint64_t(size() - lPrevSize);
 }
-
 }
 } /* o2::DataDistribution */

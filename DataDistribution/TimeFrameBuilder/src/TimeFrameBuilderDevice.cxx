@@ -20,19 +20,21 @@
 #include <chrono>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 using namespace std::chrono_literals;
 
 TfBuilderDevice::TfBuilderDevice()
-: O2Device(),
-  IFifoPipeline(eTfPipelineSize),
-  mFlpInputHandler(*this, eTfBuilderOut),
-  mFileSink(*this, *this, eTfFileSinkIn, eTfFileSinkOut),
-  mGui(nullptr),
-  mTfSizeSamples(1000),
-  mTfFreqSamples(1000)
+  : O2Device(),
+    IFifoPipeline(eTfPipelineSize),
+    mFlpInputHandler(*this, eTfBuilderOut),
+    mFileSink(*this, *this, eTfFileSinkIn, eTfFileSinkOut),
+    mGui(nullptr),
+    mTfSizeSamples(1000),
+    mTfFreqSamples(1000)
 {
 }
 
@@ -113,9 +115,10 @@ void TfBuilderDevice::TfForwardThread()
 
     // record frequency and size of TFs
     if (mBuildHistograms) {
-        mTfFreqSamples.Fill(
-          1.0 / std::chrono::duration<double>(
-          std::chrono::high_resolution_clock::now() - lFreqStartTime).count());
+      mTfFreqSamples.Fill(
+        1.0 / std::chrono::duration<double>(
+                std::chrono::high_resolution_clock::now() - lFreqStartTime)
+                .count());
 
       lFreqStartTime = std::chrono::high_resolution_clock::now();
 
@@ -134,7 +137,6 @@ void TfBuilderDevice::TfForwardThread()
 
   LOG(INFO) << "Exiting TF forwarding thread... ";
 }
-
 
 void TfBuilderDevice::GuiThread()
 {
@@ -166,7 +168,5 @@ void TfBuilderDevice::GuiThread()
 
   LOG(INFO) << "Exiting GUI thread...";
 }
-
-
 }
 } /* namespace o2::DataDistribution */

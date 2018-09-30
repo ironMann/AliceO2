@@ -26,8 +26,10 @@
 #include <condition_variable>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 struct RawDmaChunkDesc {
   uint64_t mHBFrameID; // unused
@@ -35,8 +37,9 @@ struct RawDmaChunkDesc {
   bool mValidHBF;
 };
 
-class CruLinkEmulator {
-public:
+class CruLinkEmulator
+{
+ public:
   CruLinkEmulator(std::shared_ptr<CruMemoryHandler> pMemHandler, uint64_t pLinkId, uint64_t pLinkBitsPerS, uint64_t pDmaChunkSize)
     : mMemHandler{ pMemHandler },
       mLinkID{ pLinkId },
@@ -58,7 +61,7 @@ public:
   /// Stop "data taking" thread
   void stop();
 
-private:
+ private:
   std::shared_ptr<CruMemoryHandler> mMemHandler;
 
   std::uint64_t mLinkID;

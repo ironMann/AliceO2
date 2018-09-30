@@ -20,8 +20,10 @@
 #include <map>
 #include <stdexcept>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 using namespace o2::Base;
 using namespace o2::header;
@@ -38,10 +40,8 @@ using namespace o2::header;
 struct ReadoutSubTimeframeHeader {
   uint32_t timeframeId; // id of timeframe
   uint32_t numberOfHBF; // number of HB frames (i.e. following messages)
-  uint8_t linkId; // common link id of all data in this HBframe
+  uint8_t linkId;       // common link id of all data in this HBframe
 };
-
-
 }
 } /* o2::DataDistribution */
 

@@ -24,8 +24,10 @@
 
 class O2Device;
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 namespace bpo = boost::program_options;
 
@@ -33,9 +35,11 @@ namespace bpo = boost::program_options;
 /// SubTimeFrameFileSink
 ////////////////////////////////////////////////////////////////////////////////
 
-class SubTimeFrameFileSink {
+class SubTimeFrameFileSink
+{
   using stf_pipeline = IFifoPipeline<std::unique_ptr<SubTimeFrame>>;
-public:
+
+ public:
   static constexpr const char* OptionKeyStfSinkEnable = "data-sink-enable";
   static constexpr const char* OptionKeyStfSinkDir = "data-sink-dir";
   static constexpr const char* OptionKeyStfSinkFileName = "data-sink-file-name";
@@ -47,21 +51,23 @@ public:
 
   SubTimeFrameFileSink() = delete;
 
-  SubTimeFrameFileSink(O2Device &pDevice, stf_pipeline &pPipeline, unsigned pPipelineStageIn, unsigned pPipelineStageOut)
+  SubTimeFrameFileSink(O2Device& pDevice, stf_pipeline& pPipeline, unsigned pPipelineStageIn, unsigned pPipelineStageOut)
     : mDeviceI(pDevice),
       mPipelineI(pPipeline),
       mPipelineStageIn(pPipelineStageIn),
       mPipelineStageOut(pPipelineStageOut)
-  { }
+  {
+  }
 
-  ~SubTimeFrameFileSink() {
+  ~SubTimeFrameFileSink()
+  {
     if (mSinkThread.joinable()) {
       mSinkThread.join();
     }
     LOG(INFO) << "(Sub)TimeFrame Sink terminated...";
   }
 
-  bool loadVerifyConfig(const FairMQProgOptions &pFMQProgOpt);
+  bool loadVerifyConfig(const FairMQProgOptions& pFMQProgOpt);
 
   bool enabled() const { return mEnabled; }
 
@@ -72,9 +78,9 @@ public:
 
   std::string newStfFileName();
 
-private:
-  const O2Device &mDeviceI;
-  stf_pipeline &mPipelineI;
+ private:
+  const O2Device& mDeviceI;
+  stf_pipeline& mPipelineI;
 
   std::unique_ptr<SubTimeFrameFileWriter> mStfWriter = nullptr;
 
@@ -95,7 +101,6 @@ private:
   /// variables
   unsigned mCurrentFileIdx = 0;
 };
-
 }
 } /* o2::DataDistribution */
 

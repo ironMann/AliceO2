@@ -17,20 +17,21 @@
 
 #include "Common/FilePathUtils.h"
 
+namespace o2
+{
+namespace DataDistribution
+{
 
-namespace o2 {
-namespace DataDistribution {
-
-std::string FilePathUtils::getNextSeqName(const std::string &pRootDir)
+std::string FilePathUtils::getNextSeqName(const std::string& pRootDir)
 {
   static const std::regex seq_regex("(\\d+)(?=\\D*$)", std::regex::icase);
 
-  namespace fsb =  boost::filesystem;
+  namespace fsb = boost::filesystem;
 
   fsb::path lRootPath(pRootDir);
 
   // check if root directory exists
-  if(! fsb::is_directory(lRootPath)) {
+  if (!fsb::is_directory(lRootPath)) {
     using namespace std::string_literals;
     throw std::invalid_argument("'"s + pRootDir + "' is not a directory"s);
   }
@@ -41,8 +42,7 @@ std::string FilePathUtils::getNextSeqName(const std::string &pRootDir)
   std::size_t lLen = 1;
   std::string lPrefix, lSuffix;
 
-  for(auto& entry : boost::make_iterator_range(fsb::directory_iterator(lRootPath), {}))
-  {
+  for (auto& entry : boost::make_iterator_range(fsb::directory_iterator(lRootPath), {})) {
     std::smatch result;
     const std::string lBaseName = entry.path().filename().string();
     if (std::regex_search(lBaseName, result, seq_regex)) {
@@ -64,7 +64,7 @@ std::string FilePathUtils::getNextSeqName(const std::string &pRootDir)
   // replace the string sequence
   if (lNameMatch.length() > 0) {
     std::stringstream lRet;
-    lRet << std::dec << std::setw(lLen) << std::setfill('0')  << lMaxSeq;
+    lRet << std::dec << std::setw(lLen) << std::setfill('0') << lMaxSeq;
     lNameMatch = lPrefix + lRet.str() + lSuffix;
   } else {
     lNameMatch = std::to_string(lMaxSeq);
@@ -72,6 +72,5 @@ std::string FilePathUtils::getNextSeqName(const std::string &pRootDir)
 
   return lNameMatch;
 }
-
 }
 } /* o2::DataDistribution */

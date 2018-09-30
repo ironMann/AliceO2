@@ -32,8 +32,10 @@
 
 #include <stdexcept>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 enum StfBuilderPipeline {
   eStfBuilderOut = 0,
@@ -48,12 +50,10 @@ enum StfBuilderPipeline {
   eStfInvalidStage = -1,
 };
 
-class StfBuilderDevice :
-  public Base::O2Device,
-  public IFifoPipeline<std::unique_ptr<SubTimeFrame>>
+class StfBuilderDevice : public Base::O2Device,
+                         public IFifoPipeline<std::unique_ptr<SubTimeFrame>>
 {
-public:
-
+ public:
   constexpr static int gStfOutputChanId = 0;
 
   static constexpr const char* OptionKeyInputChannelName = "input-channel-name";
@@ -77,25 +77,26 @@ public:
   const std::string& getOutputChannelName() const { return mOutputChannelName; }
   const std::string& getDplChannelName() const { return mDplChannelName; }
 
-protected:
+ protected:
   void PreRun() final;
   void PostRun() final;
   bool ConditionalRun() final;
 
-  unsigned getNextPipelineStage(unsigned pStage) final {
+  unsigned getNextPipelineStage(unsigned pStage) final
+  {
     StfBuilderPipeline lNextStage = eStfInvalidStage;
 
-    switch(pStage) {
-      case eStfBuilderOut:
-      {
+    switch (pStage) {
+      case eStfBuilderOut: {
         auto lNumStfs = mNumStfs.fetch_add(1) + 1; // fetch old val + 1
 
         if (mPipelineLimit && (lNumStfs > mMaxStfsInPipeline)) {
           mNumStfs--;
           lNextStage = eStfNullIn;
           LOG(WARNING) << "Dropping an STF due to reaching the maximum number of buffered "
-                          "STFs in the process (" << mMaxStfsInPipeline << "). Consider "
-                          "increasing the limit, or reduce the data pressure.";
+                          "STFs in the process ("
+                       << mMaxStfsInPipeline << "). Consider "
+                                                "increasing the limit, or reduce the data pressure.";
         } else {
           lNextStage = mFileSink.enabled() ? eStfFileSinkIn : eStfSendIn;
         }
@@ -130,7 +131,7 @@ protected:
 
   /// Input Interface handler
   StfInputInterface mReadoutInterface;
-  std::atomic_uint64_t mNumStfs{0};
+  std::atomic_uint64_t mNumStfs{ 0 };
 
   /// Internal threads
   std::thread mOutputThread;
@@ -147,7 +148,6 @@ protected:
   RunningSamples<float> mStfFreqSamples;
   RunningSamples<float> mStfDataTimeSamples;
 };
-
 }
 } /* namespace o2::DataDistribution */
 

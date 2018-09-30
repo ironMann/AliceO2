@@ -26,8 +26,10 @@
 #include <thread>
 #include <queue>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 using namespace std::chrono_literals;
 
@@ -42,10 +44,12 @@ StfBuilderDevice::StfBuilderDevice()
     mStfSizeSamples(1024),
     mStfFreqSamples(1024),
     mStfDataTimeSamples(1024)
-{ }
+{
+}
 
 StfBuilderDevice::~StfBuilderDevice()
-{ }
+{
+}
 
 void StfBuilderDevice::InitTask()
 {
@@ -131,10 +135,10 @@ void StfBuilderDevice::PostRun()
 
 void StfBuilderDevice::StfOutputThread()
 {
-  auto &lOutputChan = GetChannel(getOutputChannelName(), 0);
+  auto& lOutputChan = GetChannel(getOutputChannelName(), 0);
   InterleavedHdrDataSerializer lStfSerializer(lOutputChan);
 
-  auto &lDplChan = GetChannel(getDplChannelName(), 0);
+  auto& lDplChan = GetChannel(getDplChannelName(), 0);
   StfDplAdapter lStfDplAdapter(lDplChan);
 
   using hres_clock = std::chrono::high_resolution_clock;
@@ -284,6 +288,5 @@ bool StfBuilderDevice::ConditionalRun()
   std::this_thread::sleep_for(1s);
   return true;
 }
-
 }
 } /* namespace o2::DataDistribution */

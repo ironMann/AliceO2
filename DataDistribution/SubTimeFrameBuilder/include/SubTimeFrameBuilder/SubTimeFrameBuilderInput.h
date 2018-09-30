@@ -17,32 +17,34 @@
 #include <thread>
 #include <vector>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 class StfBuilderDevice;
 
-class StfInputInterface {
-public:
-
+class StfInputInterface
+{
+ public:
   StfInputInterface() = delete;
-  StfInputInterface(StfBuilderDevice &pStfBuilderDev)
-  : mDevice(pStfBuilderDev)
-  { }
+  StfInputInterface(StfBuilderDevice& pStfBuilderDev)
+    : mDevice(pStfBuilderDev)
+  {
+  }
 
   void Start(unsigned pCnt);
   void Stop();
 
   void DataHandlerThread(const unsigned pInputChannelIdx);
 
-private:
+ private:
   /// Main SubTimeBuilder O2 device
-  StfBuilderDevice &mDevice;
+  StfBuilderDevice& mDevice;
 
   /// Threads for input channels
   std::vector<std::thread> mInputThreads;
 };
-
 }
 } /* namespace o2::DataDistribution */
 

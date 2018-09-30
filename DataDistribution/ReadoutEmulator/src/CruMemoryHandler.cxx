@@ -20,8 +20,10 @@
 #include <chrono>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 constexpr unsigned long CruMemoryHandler::cBufferBucketSize;
 
@@ -30,7 +32,7 @@ void CruMemoryHandler::teardown()
   mO2LinkDataQueue.stop(); // get will not block, return false
   mSuperpages.stop();
 
-  for(auto b = 0; b < cBufferBucketSize; b++) {
+  for (auto b = 0; b < cBufferBucketSize; b++) {
     std::lock_guard<std::mutex> lock(mBufferMap[b].mLock);
     mBufferMap[b].mVirtToSuperpage.clear();
     mBufferMap[b].mUsedSuperPages.clear();
@@ -47,7 +49,7 @@ void CruMemoryHandler::init(FairMQUnmanagedRegion* pDataRegion, std::size_t pSup
   LOG(INFO) << "Initializing the segment memory. Can take a while...";
   // make sure the memory is allocated properly
   {
-    char *lPtr = getDataRegionPtr();
+    char* lPtr = getDataRegionPtr();
     for (std::size_t i = 0; i < getDataRegionSize(); i++) {
       lPtr[i] = i;
     }
@@ -56,7 +58,7 @@ void CruMemoryHandler::init(FairMQUnmanagedRegion* pDataRegion, std::size_t pSup
   // lock and initialize the empty page queue
   mSuperpages.flush();
 
-  for(auto b = 0; b < cBufferBucketSize; b++) {
+  for (auto b = 0; b < cBufferBucketSize; b++) {
     std::lock_guard<std::mutex> lock(mBufferMap[b].mLock);
     mBufferMap[b].mVirtToSuperpage.clear();
     mBufferMap[b].mUsedSuperPages.clear();
@@ -68,7 +70,7 @@ void CruMemoryHandler::init(FairMQUnmanagedRegion* pDataRegion, std::size_t pSup
     mSuperpages.push(sp);
 
     // Virtual address to superpage mapping to help with returning of the used pages
-    auto &lBucket = getBufferBucket(sp.mDataVirtualAddress);
+    auto& lBucket = getBufferBucket(sp.mDataVirtualAddress);
     std::lock_guard<std::mutex> lock(lBucket.mLock);
     lBucket.mVirtToSuperpage[sp.mDataVirtualAddress] = sp;
   }
@@ -81,10 +83,9 @@ bool CruMemoryHandler::getSuperpage(CRUSuperpage& sp)
   return mSuperpages.try_pop(sp);
 }
 
-
 void CruMemoryHandler::put_superpage(const char* spVirtAddr)
 {
-  auto &lBucket = getBufferBucket(spVirtAddr);
+  auto& lBucket = getBufferBucket(spVirtAddr);
 
   std::lock_guard<std::mutex> lock(lBucket.mLock); // needed for the mVirtToSuperpage[] lookup
   mSuperpages.push(lBucket.mVirtToSuperpage[spVirtAddr]);
@@ -99,7 +100,7 @@ void CruMemoryHandler::get_data_buffer(const char* dataBufferAddr, const std::si
 {
   const char* lSpStartAddr = reinterpret_cast<char*>((uintptr_t)dataBufferAddr & ~((uintptr_t)mSuperpageSize - 1));
 
-  auto &lBucket = getBufferBucket(lSpStartAddr);
+  auto& lBucket = getBufferBucket(lSpStartAddr);
   std::lock_guard<std::mutex> lock(lBucket.mLock);
 
   // make sure the data buffer is not already in use
@@ -127,7 +128,7 @@ void CruMemoryHandler::put_data_buffer(const char* dataBufferAddr, const std::si
   const auto lDataBufferAddr = dataBufferAddr;
   const auto lDataBuffSize = dataBuffSize;
 
-  auto &lBucket = getBufferBucket(lSpStartAddr);
+  auto& lBucket = getBufferBucket(lSpStartAddr);
   std::lock_guard<std::mutex> lock(lBucket.mLock);
 
   if (lBucket.mUsedSuperPages.count(lSpStartAddr) == 0) {
@@ -156,10 +157,6 @@ void CruMemoryHandler::put_data_buffer(const char* dataBufferAddr, const std::si
   } else {
     LOG(ERROR) << "Superpage chunk lost.";
   }
-
-
-
 }
-
 }
 } /* namespace o2::DataDistribution */

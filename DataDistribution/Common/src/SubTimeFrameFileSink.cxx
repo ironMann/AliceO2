@@ -19,8 +19,10 @@
 #include <iostream>
 #include <iomanip>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 namespace bpo = boost::program_options;
 
@@ -44,47 +46,34 @@ bpo::options_description SubTimeFrameFileSink::getProgramOptions()
 {
   bpo::options_description lSinkDesc("(Sub)TimeFrame file sink options", 120);
 
-  lSinkDesc.add_options()
-  (
+  lSinkDesc.add_options()(
     OptionKeyStfSinkEnable,
     bpo::bool_switch()->default_value(false),
-    "Enable writing of (Sub)TimeFrames to file."
-  )
-  (
+    "Enable writing of (Sub)TimeFrames to file.")(
     OptionKeyStfSinkDir,
     bpo::value<std::string>()->default_value(""),
     "Specifies a destination directory where (Sub)TimeFrames are to be written. "
-    "Note: A new directory will be created here for all output files."
-  )
-  (
+    "Note: A new directory will be created here for all output files.")(
     OptionKeyStfSinkFileName,
     bpo::value<std::string>()->default_value("%n"),
-    "Specifies file name pattern: %n - file index, %D - date, %T - time."
-  )
-  (
+    "Specifies file name pattern: %n - file index, %D - date, %T - time.")(
     OptionKeyStfSinkStfsPerFile,
     bpo::value<std::uint64_t>()->default_value(1),
-    "Specifies number of (Sub)TimeFrames per file."
-  )
-  (
+    "Specifies number of (Sub)TimeFrames per file.")(
     OptionKeyStfSinkFileSize,
-    bpo::value<std::uint64_t>()->default_value(std::uint64_t(4) << 30),  /* 4GiB */
-    "Specifies target size for (Sub)TimeFrame files."
-  )
-  (
+    bpo::value<std::uint64_t>()->default_value(std::uint64_t(4) << 30), /* 4GiB */
+    "Specifies target size for (Sub)TimeFrame files.")(
     OptionKeyStfSinkSidecar,
     bpo::bool_switch()->default_value(false),
     "Write a sidecar file for each (Sub)TimeFrame file containing information about data blocks "
     "written in the data file. "
     "Note: Useful for debugging. "
-    "Warning: sidecar file format is not stable."
-  )
-  ;
+    "Warning: sidecar file format is not stable.");
 
   return lSinkDesc;
 }
 
-bool SubTimeFrameFileSink::loadVerifyConfig(const FairMQProgOptions &pFMQProgOpt)
+bool SubTimeFrameFileSink::loadVerifyConfig(const FairMQProgOptions& pFMQProgOpt)
 {
   mEnabled = pFMQProgOpt.GetValue<bool>(OptionKeyStfSinkEnable);
 
@@ -105,9 +94,9 @@ bool SubTimeFrameFileSink::loadVerifyConfig(const FairMQProgOptions &pFMQProgOpt
   mSidecar = pFMQProgOpt.GetValue<bool>(OptionKeyStfSinkSidecar);
 
   // make sure directory exists and it is writable
-  namespace bfs =  boost::filesystem;
+  namespace bfs = boost::filesystem;
   bfs::path lDirPath(mRootDir);
-  if(! bfs::is_directory(lDirPath)) {
+  if (!bfs::is_directory(lDirPath)) {
     LOG(ERROR) << "(Sub)TimeFrame file sink directory does not exist";
     return false;
   }
@@ -139,7 +128,7 @@ std::string SubTimeFrameFileSink::newStfFileName()
 
   std::string lFileName = mFileNamePattern;
   std::stringstream lIdxString;
-  lIdxString << std::dec << std::setw(8) << std::setfill('0')  << mCurrentFileIdx;
+  lIdxString << std::dec << std::setw(8) << std::setfill('0') << mCurrentFileIdx;
   boost::replace_all(lFileName, "%n", lIdxString.str());
 
   strftime(lTimeBuf, sizeof(lTimeBuf), "%F", localtime(&lNow));
@@ -173,11 +162,10 @@ void SubTimeFrameFileSink::DataHandlerThread(const unsigned pIdx)
 
     // check if we need a writer
     if (!mStfWriter) {
-      namespace bfs =  boost::filesystem;
+      namespace bfs = boost::filesystem;
       mStfWriter = std::make_unique<SubTimeFrameFileWriter>(
         bfs::path(mCurrentDir) / bfs::path(newStfFileName()),
-        mSidecar
-      );
+        mSidecar);
     }
 
     // write
@@ -202,6 +190,5 @@ void SubTimeFrameFileSink::DataHandlerThread(const unsigned pIdx)
   }
   LOG(INFO) << "Exiting file sink thread[" << pIdx << "]...";
 }
-
 }
 } /* o2::DataDistribution */

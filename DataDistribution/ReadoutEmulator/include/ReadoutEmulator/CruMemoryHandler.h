@@ -30,8 +30,10 @@
 
 class FairMQUnmanagedRegion;
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 struct CRUSuperpage {
   char* mDataVirtualAddress;
@@ -50,8 +52,9 @@ struct ReadoutLinkO2Data {
   std::vector<CruDmaPacket> mLinkRawData;
 };
 
-class CruMemoryHandler {
-public:
+class CruMemoryHandler
+{
+ public:
   CruMemoryHandler() = default;
   ~CruMemoryHandler()
   {
@@ -110,7 +113,7 @@ public:
     return mO2LinkDataQueue.pop(pLinkData);
   }
 
-private:
+ private:
   FairMQUnmanagedRegion* mDataRegion;
 
   std::size_t mSuperpageSize;
@@ -122,7 +125,7 @@ private:
   /// split tracking for scalability into several buckets based on sp address
   static constexpr unsigned long cBufferBucketSize = 127;
 
-  struct BufferBucket{
+  struct BufferBucket {
     std::mutex mLock;
     std::unordered_map<const char*, CRUSuperpage> mVirtToSuperpage;
     // map<sp_address, map<buff_addr, buf_len>>
@@ -131,14 +134,14 @@ private:
 
   BufferBucket mBufferMap[cBufferBucketSize];
 
-  BufferBucket& getBufferBucket(const char *pAddr) {
-    return mBufferMap[std::hash<const char *>{}(pAddr) % cBufferBucketSize];
+  BufferBucket& getBufferBucket(const char* pAddr)
+  {
+    return mBufferMap[std::hash<const char*>{}(pAddr) % cBufferBucketSize];
   }
 
   /// output data queue
   ConcurrentFifo<ReadoutLinkO2Data> mO2LinkDataQueue;
 };
-
 }
 } /* namespace o2::DataDistribution */
 

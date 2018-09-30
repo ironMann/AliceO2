@@ -20,25 +20,28 @@
 class O2Device;
 class FairMQChannel;
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameReadoutBuilder
 ////////////////////////////////////////////////////////////////////////////////
 
-class SubTimeFrameReadoutBuilder : public ISubTimeFrameVisitor {
-public:
+class SubTimeFrameReadoutBuilder : public ISubTimeFrameVisitor
+{
+ public:
   SubTimeFrameReadoutBuilder() = delete;
   SubTimeFrameReadoutBuilder(const FairMQChannel& pChan);
 
-  void addHbFrames(const ReadoutSubTimeframeHeader &pHdr, std::vector<FairMQMessagePtr> &&pHbFrames);
+  void addHbFrames(const ReadoutSubTimeframeHeader& pHdr, std::vector<FairMQMessagePtr>&& pHbFrames);
   std::unique_ptr<SubTimeFrame> getStf();
 
-protected:
-  void visit(SubTimeFrame &pStf) override;
+ protected:
+  void visit(SubTimeFrame& pStf) override;
 
-private:
+ private:
   std::unique_ptr<SubTimeFrame> mStf;
   const FairMQChannel& mChan;
 };
@@ -47,21 +50,22 @@ private:
 /// InterleavedHdrDataSerializer
 ////////////////////////////////////////////////////////////////////////////////
 
-class InterleavedHdrDataSerializer : public ISubTimeFrameVisitor {
-public:
+class InterleavedHdrDataSerializer : public ISubTimeFrameVisitor
+{
+ public:
   InterleavedHdrDataSerializer() = delete;
   InterleavedHdrDataSerializer(const FairMQChannel& pChan)
-  : mChan(pChan)
+    : mChan(pChan)
   {
     mMessages.reserve(1024);
   }
 
-  void serialize(std::unique_ptr<SubTimeFrame> &&pStf);
+  void serialize(std::unique_ptr<SubTimeFrame>&& pStf);
 
-protected:
+ protected:
   void visit(SubTimeFrame& pStf) override;
 
-private:
+ private:
   std::vector<FairMQMessagePtr> mMessages;
   const FairMQChannel& mChan;
 };
@@ -70,21 +74,21 @@ private:
 /// InterleavedHdrDataDeserializer
 ////////////////////////////////////////////////////////////////////////////////
 
-class InterleavedHdrDataDeserializer : public ISubTimeFrameVisitor {
-public:
+class InterleavedHdrDataDeserializer : public ISubTimeFrameVisitor
+{
+ public:
   InterleavedHdrDataDeserializer() = default;
 
   std::unique_ptr<SubTimeFrame> deserialize(const FairMQChannel& pChan);
-  std::unique_ptr<SubTimeFrame> deserialize(FairMQParts &pMsgs);
+  std::unique_ptr<SubTimeFrame> deserialize(FairMQParts& pMsgs);
 
-protected:
+ protected:
   std::unique_ptr<SubTimeFrame> deserialize_impl();
   void visit(SubTimeFrame& pStf) override;
 
-private:
+ private:
   std::vector<FairMQMessagePtr> mMessages;
 };
-
 }
 } /* o2::DataDistribution */
 

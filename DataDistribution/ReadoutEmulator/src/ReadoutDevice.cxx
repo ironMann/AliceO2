@@ -19,8 +19,10 @@
 #include <chrono>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 constexpr int gHbfOutputChanId = 0;
 
@@ -65,7 +67,7 @@ void ReadoutDevice::InitTask()
   // Open SHM regions (segments)
   mDataRegion = NewUnmanagedRegionFor(
     mOutChannelName, 0, mDataRegionSize,
-    [this](void* data, size_t size, void *hint) { // callback to be called when message buffers no longer needed by transport
+    [this](void* data, size_t size, void* hint) { // callback to be called when message buffers no longer needed by transport
       mCruMemoryHandler->put_data_buffer(static_cast<char*>(data), size);
     });
 
@@ -105,7 +107,7 @@ void ReadoutDevice::PostRun()
 
 bool ReadoutDevice::ConditionalRun()
 {
-  auto &lOutputChan = GetChannel(mOutChannelName, 0);
+  auto& lOutputChan = GetChannel(mOutChannelName, 0);
 
   // finish an STF every ~1/45 seconds
   static const auto cDataTakingStart = std::chrono::high_resolution_clock::now();
@@ -180,6 +182,5 @@ void ReadoutDevice::GuiThread()
   }
   LOG(INFO) << "Exiting GUI thread...";
 }
-
 }
 } /* namespace o2::DataDistribution */

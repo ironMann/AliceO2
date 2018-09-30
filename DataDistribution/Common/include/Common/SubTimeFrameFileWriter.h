@@ -22,20 +22,23 @@
 
 class O2Device;
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameFileWriter
 ////////////////////////////////////////////////////////////////////////////////
 
-class SubTimeFrameFileWriter : public ISubTimeFrameConstVisitor {
-  static const constexpr char *sSidecarFieldSep = " ";
-  static const constexpr char *sSidecarRecordSep = "\n";
-public:
+class SubTimeFrameFileWriter : public ISubTimeFrameConstVisitor
+{
+  static const constexpr char* sSidecarFieldSep = " ";
+  static const constexpr char* sSidecarRecordSep = "\n";
 
+ public:
   SubTimeFrameFileWriter() = delete;
-  SubTimeFrameFileWriter(const boost::filesystem::path &pFileName, bool pWriteInfo = false);
+  SubTimeFrameFileWriter(const boost::filesystem::path& pFileName, bool pWriteInfo = false);
   ~SubTimeFrameFileWriter();
 
   ///
@@ -48,7 +51,7 @@ public:
   ///
   const std::uint64_t size() { return std::uint64_t(mFile.tellp()); }
 
-private:
+ private:
   void visit(const SubTimeFrame& pStf) override;
 
   //
@@ -72,18 +75,16 @@ private:
     typename = std::enable_if_t<std::is_pointer<pointer>::value>, // pointers only
     typename = std::enable_if_t<                                  // unless void*, standard layout!
       std::is_void<std::remove_pointer_t<pointer>>::value ||
-      std::is_standard_layout<std::remove_pointer_t<pointer>>::value>
-  >
+      std::is_standard_layout<std::remove_pointer_t<pointer>>::value>>
   void buffered_write(const pointer p, std::streamsize count);
 
   const std::uint64_t getSizeInFile() const;
 
   // vector of <headers, data> elements of a Stf to be written
-  std::vector<const SubTimeFrame::StfData *> mStfData;
+  std::vector<const SubTimeFrame::StfData*> mStfData;
   SubTimeFrameFileDataIndex mStfDataIndex;
   std::uint64_t mStfSize = std::uint64_t(0); // meta + index + data (and all headers)
 };
-
 }
 } /* o2::DataDistribution */
 

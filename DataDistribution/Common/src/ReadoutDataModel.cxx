@@ -15,9 +15,9 @@
 #include <iterator>
 #include <algorithm>
 
-namespace o2 {
-namespace DataDistribution {
-
-
+namespace o2
+{
+namespace DataDistribution
+{
 }
 } /* o2::DataDistribution */

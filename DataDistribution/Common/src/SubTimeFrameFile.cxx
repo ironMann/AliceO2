@@ -12,19 +12,21 @@
 
 #include <gsl/gsl_util>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameFileMeta
 ////////////////////////////////////////////////////////////////////////////////
 
-const o2::header::DataDescription SubTimeFrameFileMeta::sDataDescFileSubTimeFrame{"FILE_STF_META"};
+const o2::header::DataDescription SubTimeFrameFileMeta::sDataDescFileSubTimeFrame{ "FILE_STF_META" };
 
-std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileMeta &pMeta)
+std::ostream& operator<<(std::ostream& pStream, const SubTimeFrameFileMeta& pMeta)
 {
   static_assert(std::is_standard_layout<SubTimeFrameFileMeta>::value,
-    "SubTimeFrameFileMeta must be a std layout type.");
+                "SubTimeFrameFileMeta must be a std layout type.");
 
   // write DataHeader
   const o2::header::DataHeader lDataHeader = SubTimeFrameFileMeta::getDataHeader();
@@ -38,12 +40,12 @@ std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileMeta &pMet
 /// SubTimeFrameFileDataIndex
 ////////////////////////////////////////////////////////////////////////////////
 
-const o2::header::DataDescription SubTimeFrameFileDataIndex::sDataDescFileStfDataIndex{"FILE_STF_INDEX"};
+const o2::header::DataDescription SubTimeFrameFileDataIndex::sDataDescFileStfDataIndex{ "FILE_STF_INDEX" };
 
-std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileDataIndex &pIndex)
+std::ostream& operator<<(std::ostream& pStream, const SubTimeFrameFileDataIndex& pIndex)
 {
   static_assert(std::is_standard_layout<SubTimeFrameFileDataIndex::DataIndexElem>::value,
-    "SubTimeFrameFileDataIndex::DataIndexElem must be a std layout type.");
+                "SubTimeFrameFileDataIndex::DataIndexElem must be a std layout type.");
 
   // write DataHeader
   const o2::header::DataHeader lDataHeader = pIndex.getDataHeader();
@@ -51,8 +53,7 @@ std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileDataIndex 
 
   // write the index
   return pStream.write(reinterpret_cast<const char*>(pIndex.mDataIndex.data()),
-    pIndex.mDataIndex.size() * sizeof(SubTimeFrameFileDataIndex::DataIndexElem));
+                       pIndex.mDataIndex.size() * sizeof(SubTimeFrameFileDataIndex::DataIndexElem));
 }
-
 }
 } /* o2::DataDistribution */

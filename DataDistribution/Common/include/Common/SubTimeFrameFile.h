@@ -17,27 +17,29 @@
 
 #include <Headers/DataHeader.h>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameFileMeta
 ////////////////////////////////////////////////////////////////////////////////
 
-struct SubTimeFrameFileMeta
-{
+struct SubTimeFrameFileMeta {
   static const o2::header::DataDescription sDataDescFileSubTimeFrame;
 
-  static const o2::header::DataHeader getDataHeader() {
+  static const o2::header::DataHeader getDataHeader()
+  {
     o2::header::DataHeader(
       SubTimeFrameFileMeta::sDataDescFileSubTimeFrame,
       o2::header::gDataOriginAny,
       0, // TODO: subspecification? FLP ID? EPN ID?
-      sizeof(SubTimeFrameFileMeta)
-    );
+      sizeof(SubTimeFrameFileMeta));
   }
 
-  static constexpr std::uint64_t getSizeInFile() {
+  static constexpr std::uint64_t getSizeInFile()
+  {
     return sizeof(o2::header::DataHeader) + sizeof(SubTimeFrameFileMeta);
   }
 
@@ -56,12 +58,14 @@ struct SubTimeFrameFileMeta
   ///
   std::uint64_t mWriteTimeMs;
 
-  auto getTimePoint() {
+  auto getTimePoint()
+  {
     using namespace std::chrono;
-    return time_point<system_clock, milliseconds>{milliseconds{mWriteTimeMs}};
+    return time_point<system_clock, milliseconds>{ milliseconds{ mWriteTimeMs } };
   }
 
-  std::string getTimeString() {
+  std::string getTimeString()
+  {
     using namespace std::chrono;
     std::time_t lTime = system_clock::to_time_t(getTimePoint());
 
@@ -71,30 +75,28 @@ struct SubTimeFrameFileMeta
   }
 
   SubTimeFrameFileMeta(const std::uint64_t pStfSize)
-  : SubTimeFrameFileMeta()
+    : SubTimeFrameFileMeta()
   {
     mStfSizeInFile = pStfSize;
   }
 
   SubTimeFrameFileMeta()
-  : mStfSizeInFile{0}
+    : mStfSizeInFile{ 0 }
   {
     using namespace std::chrono;
     mWriteTimeMs = time_point_cast<milliseconds>(system_clock::now()).time_since_epoch().count();
   }
 
-  friend std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileMeta &pMeta);
+  friend std::ostream& operator<<(std::ostream& pStream, const SubTimeFrameFileMeta& pMeta);
 };
 
-std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileMeta &pMeta);
-
+std::ostream& operator<<(std::ostream& pStream, const SubTimeFrameFileMeta& pMeta);
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameFileDataIndex
 ////////////////////////////////////////////////////////////////////////////////
 
-struct SubTimeFrameFileDataIndex
-{
+struct SubTimeFrameFileDataIndex {
   static const o2::header::DataDescription sDataDescFileStfDataIndex;
 
   struct DataIndexElem {
@@ -103,10 +105,10 @@ struct SubTimeFrameFileDataIndex
     std::uint64_t mSize = 0;
 
     DataIndexElem() = delete;
-    DataIndexElem(const o2::header::DataIdentifier &pId, const std::uint64_t pOff, const std::uint64_t pSize)
-    : mDataIdentifier(pId),
-      mOffset(pOff),
-      mSize(pSize)
+    DataIndexElem(const o2::header::DataIdentifier& pId, const std::uint64_t pOff, const std::uint64_t pSize)
+      : mDataIdentifier(pId),
+        mOffset(pOff),
+        mSize(pSize)
     {
       static_assert(sizeof(DataIndexElem) == 40, "DataIdentifier changed -> Binary compatibility is lost!");
     }
@@ -117,31 +119,32 @@ struct SubTimeFrameFileDataIndex
   void clear() noexcept { mDataIndex.clear(); }
   bool empty() const noexcept { return mDataIndex.empty(); }
 
-  void AddStfElement(const o2::header::DataIdentifier &pDataId, const std::uint64_t pOffset, const std::uint64_t pSize) {
+  void AddStfElement(const o2::header::DataIdentifier& pDataId, const std::uint64_t pOffset, const std::uint64_t pSize)
+  {
     mDataIndex.emplace_back(DataIndexElem(pDataId, pOffset, pSize));
   }
 
-  const std::uint64_t getSizeInFile() const {
+  const std::uint64_t getSizeInFile() const
+  {
     return sizeof(o2::header::DataHeader) + sizeof(DataIndexElem) * mDataIndex.size();
   }
 
-  friend std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileDataIndex &pIndex);
+  friend std::ostream& operator<<(std::ostream& pStream, const SubTimeFrameFileDataIndex& pIndex);
 
-private:
-  const o2::header::DataHeader getDataHeader() const {
-    return o2::header::DataHeader (
+ private:
+  const o2::header::DataHeader getDataHeader() const
+  {
+    return o2::header::DataHeader(
       sDataDescFileStfDataIndex,
       o2::header::gDataOriginAny,
       0, // TODO: subspecification? FLP ID? EPN ID?
-      mDataIndex.size() * sizeof(DataIndexElem)
-    );
+      mDataIndex.size() * sizeof(DataIndexElem));
   }
 
   std::vector<DataIndexElem> mDataIndex;
 };
 
-std::ostream& operator<<(std::ostream &pStream, const SubTimeFrameFileDataIndex &pIndex);
-
+std::ostream& operator<<(std::ostream& pStream, const SubTimeFrameFileDataIndex& pIndex);
 }
 } /* o2::DataDistribution */
 

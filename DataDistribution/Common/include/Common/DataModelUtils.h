@@ -11,9 +11,10 @@
 #ifndef STF_DATAMODEL_UTILS_H_
 #define STF_DATAMODEL_UTILS_H_
 
-namespace o2 {
-namespace DataDistribution {
-
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// IDataModelObject interface
@@ -21,23 +22,24 @@ namespace DataDistribution {
 class EquipmentHBFrames;
 class SubTimeFrame;
 
-class ISubTimeFrameVisitor {
-public:
+class ISubTimeFrameVisitor
+{
+ public:
   virtual void visit(SubTimeFrame&) = 0;
 };
 
-class ISubTimeFrameConstVisitor {
-public:
+class ISubTimeFrameConstVisitor
+{
+ public:
   virtual void visit(const SubTimeFrame&) = 0;
 };
 
-class IDataModelObject {
-public:
+class IDataModelObject
+{
+ public:
   virtual void accept(ISubTimeFrameVisitor& v) = 0;
   virtual void accept(ISubTimeFrameConstVisitor& v) const = 0;
 };
-
-
 }
 } /* o2::DataDistribution */
 

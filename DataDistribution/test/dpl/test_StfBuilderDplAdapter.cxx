@@ -20,22 +20,22 @@ using namespace o2::framework;
 using DataHeader = o2::header::DataHeader;
 using DataOrigin = o2::header::DataOrigin;
 
-
 // A simple work flow which takes O2 messages from a SubTimeFrameBuilder device as input
 
-WorkflowSpec defineDataProcessing(ConfigContext const&specs) {
+WorkflowSpec defineDataProcessing(ConfigContext const& specs)
+{
 
-  auto outspecHbFrame = OutputSpec{o2::header::gDataOriginCRU,
-                            o2::header::gDataDescriptionCruData};
-  auto outspecStfMeta = OutputSpec{o2::header::gDataOriginFLP,
-                            o2::DataDistribution::gDataDescSubTimeFrame};
+  auto outspecHbFrame = OutputSpec{ o2::header::gDataOriginCRU,
+                                    o2::header::gDataDescriptionCruData };
+  auto outspecStfMeta = OutputSpec{ o2::header::gDataOriginFLP,
+                                    o2::DataDistribution::gDataDescSubTimeFrame };
 
-  auto inspecHbFrame = InputSpec{"hbframe",
-                          o2::header::gDataOriginCRU,
-                          o2::header::gDataDescriptionCruData};
-  auto inspecStfMeta = InputSpec{"stfmeta",
-                          o2::header::gDataOriginFLP,
-                          o2::DataDistribution::gDataDescSubTimeFrame};
+  auto inspecHbFrame = InputSpec{ "hbframe",
+                                  o2::header::gDataOriginCRU,
+                                  o2::header::gDataDescriptionCruData };
+  auto inspecStfMeta = InputSpec{ "stfmeta",
+                                  o2::header::gDataOriginFLP,
+                                  o2::DataDistribution::gDataDescSubTimeFrame };
 
   WorkflowSpec workflow;
 
@@ -53,7 +53,7 @@ WorkflowSpec defineDataProcessing(ConfigContext const&specs) {
         messages from different equipments. Additionally, StfBuilder might create some
         bookkeeping data that needs to be transported to StfSender unchanged.
        */
-      {outspecHbFrame /*, outspecStfMeta*/},
+      { outspecHbFrame /*, outspecStfMeta*/ },
       // NOTE: make sure to enable DPL when running the SubTimeFrameBuilderDevice
       "type=pair,method=connect,address=ipc:///tmp/stf-builder-dpl-pipe,rateLogging=1",
       o2DataModelAdaptor(outspecHbFrame /* currently unused */, 0, 1)
@@ -70,18 +70,18 @@ WorkflowSpec defineDataProcessing(ConfigContext const&specs) {
         Before an STF is transported to an EPN, StfBuilder needs to acquire all messages
         belonging to the STF.
        */
-      Inputs{inspecHbFrame /*, inspecStfMeta */},
+      Inputs{ inspecHbFrame /*, inspecStfMeta */ },
       {},
       AlgorithmSpec{
-        [](ProcessingContext &ctx) {
+        [](ProcessingContext& ctx) {
 
           // throttle the log
           static thread_local unsigned long lPrint = 0;
-            if (lPrint++ % 63 == 0) {
+          if (lPrint++ % 63 == 0) {
 
-              for (const auto& itInputs : ctx.inputs()) {
+            for (const auto& itInputs : ctx.inputs()) {
               // Retrieving message size from API
-              const auto *msgHdr = o2::header::get<o2::header::DataHeader*>(itInputs.header);
+              const auto* msgHdr = o2::header::get<o2::header::DataHeader*>(itInputs.header);
 
               o2::DataDistribution::EquipmentIdentifier lId = *msgHdr;
               LOG(INFO) << "Equipment identifier: " << lId.info() << " Payload size: " << msgHdr->payloadSize;

@@ -18,10 +18,13 @@
 #include <condition_variable>
 #include <iterator>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
-namespace impl {
+namespace impl
+{
 
 /// Concurrent (thread-safe) container adapter for FIFO/LIFO data structures
 enum QueueType {
@@ -30,9 +33,9 @@ enum QueueType {
 };
 
 template <typename T, QueueType type>
-class ConcurrentContainerImpl {
-public:
-
+class ConcurrentContainerImpl
+{
+ public:
   typedef T value_type;
 
   ~ConcurrentContainerImpl()
@@ -138,7 +141,7 @@ public:
     return mContainer.size();
   }
 
-private:
+ private:
   std::deque<T> mContainer;
   mutable std::mutex mLock;
   std::condition_variable mCond;
@@ -164,27 +167,30 @@ using ConcurrentLifo = impl::ConcurrentContainerImpl<T, impl::eLIFO>;
 ///  Interface for an object with input and output ConcurrentContainer queue/stack
 ///
 
-template<
+template <
   typename T,
-  typename = std::enable_if_t<std::is_move_assignable<T>::value>
->
-class IFifoPipeline {
+  typename = std::enable_if_t<std::is_move_assignable<T>::value>>
+class IFifoPipeline
+{
 
-public:
+ public:
   IFifoPipeline(unsigned pNoStages)
-  : mPipelineQueues(pNoStages)
-  { }
+    : mPipelineQueues(pNoStages)
+  {
+  }
 
-  virtual ~IFifoPipeline() { }
+  virtual ~IFifoPipeline() {}
 
-  void stopPipeline() {
-    for (auto &lQueue : mPipelineQueues) {
+  void stopPipeline()
+  {
+    for (auto& lQueue : mPipelineQueues) {
       lQueue.stop();
     }
   }
 
   template <typename... Args>
-  bool queue(unsigned pStage, Args&&... args) {
+  bool queue(unsigned pStage, Args&&... args)
+  {
     assert(pStage < mPipelineQueues.size());
     auto lNextStage = getNextPipelineStage(pStage);
     assert((lNextStage <= mPipelineQueues.size()) && "next stage larger than expected");
@@ -196,18 +202,18 @@ public:
     return false;
   }
 
-  T dequeue(unsigned pStage) {
+  T dequeue(unsigned pStage)
+  {
     T t;
     mPipelineQueues[pStage].pop(t);
     return std::move(t);
   }
 
-protected:
+ protected:
   virtual unsigned getNextPipelineStage(unsigned pStage) = 0;
 
   std::vector<o2::DataDistribution::ConcurrentFifo<T>> mPipelineQueues;
 };
-
 
 } /* namespace o2::DataDistribution */
 

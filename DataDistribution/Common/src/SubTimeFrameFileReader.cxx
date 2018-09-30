@@ -13,14 +13,16 @@
 
 #include <gsl/gsl_util>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameFileReader
 ////////////////////////////////////////////////////////////////////////////////
 
-SubTimeFrameFileReader::SubTimeFrameFileReader(boost::filesystem::path &pFileName)
+SubTimeFrameFileReader::SubTimeFrameFileReader(boost::filesystem::path& pFileName)
 {
   using ios = std::ios_base;
 
@@ -29,11 +31,11 @@ SubTimeFrameFileReader::SubTimeFrameFileReader(boost::filesystem::path &pFileNam
     mFile.exceptions(std::fstream::failbit | std::fstream::badbit);
 
     // get the file size
-    mFile.seekg(0,std::ios_base::end);
+    mFile.seekg(0, std::ios_base::end);
     mFileSize = mFile.tellg();
-    mFile.seekg(0,std::ios_base::beg);
+    mFile.seekg(0, std::ios_base::beg);
 
-  } catch(std::ifstream::failure &eOpenErr) {
+  } catch (std::ifstream::failure& eOpenErr) {
     LOG(ERROR) << "Failed to open TF file for reading. Error: " << eOpenErr.what();
   }
 }
@@ -43,16 +45,16 @@ SubTimeFrameFileReader::~SubTimeFrameFileReader()
   try {
     if (mFile.is_open())
       mFile.close();
-  } catch(std::ifstream::failure &eCloseErr) {
+  } catch (std::ifstream::failure& eCloseErr) {
     LOG(ERROR) << "Closing TF file failed. Error: " << eCloseErr.what();
-  } catch(...) {
+  } catch (...) {
     LOG(ERROR) << "Closing TF file failed.";
   }
 }
 
 void SubTimeFrameFileReader::visit(SubTimeFrame& pStf)
 {
-  for (auto &lStfDataPair : mStfData) {
+  for (auto& lStfDataPair : mStfData) {
     pStf.addStfData(std::move(lStfDataPair));
   }
 }
@@ -93,7 +95,6 @@ std::int64_t SubTimeFrameFileReader::getHeaderStackSize() // throws ios_base::fa
   return lHdrStackSize;
 }
 
-
 bool SubTimeFrameFileReader::read(SubTimeFrame& pStf, std::uint64_t pStfId, const FairMQChannel& pDstChan)
 {
   // If mFile is good, we're positioned to read a TF
@@ -101,7 +102,7 @@ bool SubTimeFrameFileReader::read(SubTimeFrame& pStf, std::uint64_t pStfId, cons
     return false;
   }
 
-  if(!mFile.good()) {
+  if (!mFile.good()) {
     LOG(WARNING) << "Error while reading a TF from file. (bad stream state)";
     return false;
   }
@@ -119,11 +120,11 @@ bool SubTimeFrameFileReader::read(SubTimeFrame& pStf, std::uint64_t pStfId, cons
   SubTimeFrameFileMeta lStfFileMeta;
 
   try {
-  // Write DataHeader + SubTimeFrameFileMeta
+    // Write DataHeader + SubTimeFrameFileMeta
     buffered_read(&lStfMetaDataHdr, sizeof(DataHeader));
     buffered_read(&lStfFileMeta, sizeof(SubTimeFrameFileMeta));
 
-  } catch(const std::ios_base::failure& eFailExc) {
+  } catch (const std::ios_base::failure& eFailExc) {
     LOG(ERROR) << "Reading from file failed. Error: " << eFailExc.what();
     return false;
   }
@@ -153,13 +154,13 @@ bool SubTimeFrameFileReader::read(SubTimeFrame& pStf, std::uint64_t pStfId, cons
   }
 
   // read all data blocks and headers
-  assert (mStfData.empty());
+  assert(mStfData.empty());
   try {
 
     std::int64_t lLeftToRead = lStfDataSize;
 
     // read <hdrStack + data> pairs
-    while(lLeftToRead > 0) {
+    while (lLeftToRead > 0) {
 
       // read the header stack
       const std::int64_t lHdrSize = getHeaderStackSize();
@@ -194,9 +195,7 @@ bool SubTimeFrameFileReader::read(SubTimeFrame& pStf, std::uint64_t pStfId, cons
       mStfData.emplace_back(
         SubTimeFrame::StfData{
           std::move(lHdrStackMsg),
-          std::move(lDataMsg)
-        }
-      );
+          std::move(lDataMsg) });
 
       // update the counter
       lLeftToRead -= (lHdrSize + lDataSize);
@@ -206,7 +205,7 @@ bool SubTimeFrameFileReader::read(SubTimeFrame& pStf, std::uint64_t pStfId, cons
       LOG(DEBUG) << "Read more data than it is indicated in the META header!";
     }
 
-  } catch(const std::ios_base::failure& eFailExc) {
+  } catch (const std::ios_base::failure& eFailExc) {
     LOG(ERROR) << "Reading from file failed. Error: " << eFailExc.what();
     return false;
   }
@@ -220,7 +219,5 @@ bool SubTimeFrameFileReader::read(SubTimeFrame& pStf, std::uint64_t pStfId, cons
 
   return true;
 }
-
-
 }
 } /* o2::DataDistribution */

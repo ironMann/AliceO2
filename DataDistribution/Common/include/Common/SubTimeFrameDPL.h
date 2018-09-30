@@ -16,32 +16,35 @@
 
 #include <Headers/DataHeader.h>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// StfDplAdapter
 ////////////////////////////////////////////////////////////////////////////////
 
-class StfDplAdapter : public ISubTimeFrameVisitor {
-public:
+class StfDplAdapter : public ISubTimeFrameVisitor
+{
+ public:
   StfDplAdapter() = delete;
   StfDplAdapter(const FairMQChannel& pDplBridgeChan)
-  : mSerializer(pDplBridgeChan)
-  { }
+    : mSerializer(pDplBridgeChan)
+  {
+  }
 
-  void sendToDpl(std::unique_ptr<SubTimeFrame> &&pStf) {
+  void sendToDpl(std::unique_ptr<SubTimeFrame>&& pStf)
+  {
     mSerializer.serialize(std::move(pStf));
   }
 
-protected:
-  void visit(SubTimeFrame& pStf) override { };
+ protected:
+  void visit(SubTimeFrame& pStf) override{};
 
-private:
+ private:
   InterleavedHdrDataSerializer mSerializer;
 };
-
-
 }
 } /* o2::DataDistribution */
 

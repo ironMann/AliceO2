@@ -21,28 +21,32 @@
 #include <mutex>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 class TfBuilderDevice;
 
-class TfBuilderInput {
-public:
-
+class TfBuilderInput
+{
+ public:
   TfBuilderInput() = delete;
-  TfBuilderInput(TfBuilderDevice &pStfBuilderDev, unsigned pOutStage)
-  : mDevice(pStfBuilderDev),
-    mOutStage(pOutStage)
-  { }
+  TfBuilderInput(TfBuilderDevice& pStfBuilderDev, unsigned pOutStage)
+    : mDevice(pStfBuilderDev),
+      mOutStage(pOutStage)
+  {
+  }
 
   void Start(unsigned int pNumFlp);
   void Stop();
 
   void DataHandlerThread(const std::uint32_t pFlpIndex);
   void StfMergerThread();
-private:
+
+ private:
   /// Main TimeFrameBuilder O2 device
-  TfBuilderDevice &mDevice;
+  TfBuilderDevice& mDevice;
 
   /// Threads for input channels (per FLP)
   std::vector<std::thread> mInputThreads;
@@ -56,7 +60,6 @@ private:
   /// Output pipeline stage
   unsigned mOutStage;
 };
-
 }
 } /* namespace o2::DataDistribution */
 

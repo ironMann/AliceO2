@@ -22,8 +22,10 @@
 
 #include <gsl/gsl_util>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrameReadoutBuilder
@@ -35,12 +37,12 @@ SubTimeFrameReadoutBuilder::SubTimeFrameReadoutBuilder(const FairMQChannel& pCha
 {
 }
 
-void SubTimeFrameReadoutBuilder::visit(SubTimeFrame &pStf)
+void SubTimeFrameReadoutBuilder::visit(SubTimeFrame& pStf)
 {
   /* empty */
 }
 
-void SubTimeFrameReadoutBuilder::addHbFrames(const ReadoutSubTimeframeHeader &pHdr, std::vector<FairMQMessagePtr> &&pHbFrames)
+void SubTimeFrameReadoutBuilder::addHbFrames(const ReadoutSubTimeframeHeader& pHdr, std::vector<FairMQMessagePtr>&& pHbFrames)
 {
   if (!mStf) {
     mStf = std::make_unique<SubTimeFrame>(pHdr.timeframeId);
@@ -49,8 +51,7 @@ void SubTimeFrameReadoutBuilder::addHbFrames(const ReadoutSubTimeframeHeader &pH
   const EquipmentIdentifier lEqId = EquipmentIdentifier(
     o2::header::gDataDescriptionCruData,
     o2::header::gDataOriginCRU, // FIXME: proper equipment specification
-    pHdr.linkId
-  );
+    pHdr.linkId);
 
   // NOTE: skip the first message (readout header) in pHbFrames
   for (auto i = 1; i < pHbFrames.size(); i++) {
@@ -58,8 +59,7 @@ void SubTimeFrameReadoutBuilder::addHbFrames(const ReadoutSubTimeframeHeader &pH
       lEqId.mDataDescription,
       lEqId.mDataOrigin,
       lEqId.mSubSpecification,
-      pHbFrames[i]->GetSize()
-    );
+      pHbFrames[i]->GetSize());
     lDataHdr.payloadSerializationMethod = gSerializationMethodNone;
 
     auto lHdrMsg = mChan.NewMessage(sizeof(DataHeader));
@@ -69,7 +69,7 @@ void SubTimeFrameReadoutBuilder::addHbFrames(const ReadoutSubTimeframeHeader &pH
     }
     std::memcpy(lHdrMsg->GetData(), &lDataHdr, sizeof(DataHeader));
 
-    mStf->addStfData(lDataHdr, SubTimeFrame::StfData{ std::move(lHdrMsg), std::move(pHbFrames[i])});
+    mStf->addStfData(lDataHdr, SubTimeFrame::StfData{ std::move(lHdrMsg), std::move(pHbFrames[i]) });
   }
 
   pHbFrames.clear();
@@ -80,7 +80,6 @@ std::unique_ptr<SubTimeFrame> SubTimeFrameReadoutBuilder::getStf()
   return std::move(mStf);
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////
 /// InterleavedHdrDataSerializer
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,8 +88,7 @@ static const o2::header::DataHeader gStfDistDataHeader(
   gDataDescSubTimeFrame,
   o2::header::gDataOriginFLP,
   0, // TODO: subspecification? FLP ID? EPN ID?
-  sizeof(SubTimeFrame::Header)
-);
+  sizeof(SubTimeFrame::Header));
 
 void InterleavedHdrDataSerializer::visit(SubTimeFrame& pStf)
 {
@@ -102,7 +100,6 @@ void InterleavedHdrDataSerializer::visit(SubTimeFrame& pStf)
   }
   std::memcpy(lDataHeaderMsg->GetData(), &gStfDistDataHeader, sizeof(DataHeader));
 
-
   auto lDataMsg = mChan.NewMessage(sizeof(SubTimeFrame::Header));
   if (!lDataMsg) {
     LOG(ERROR) << "Allocation error: Stf::Header::size: " << sizeof(SubTimeFrame::Header);
@@ -113,9 +110,9 @@ void InterleavedHdrDataSerializer::visit(SubTimeFrame& pStf)
   mMessages.emplace_back(std::move(lDataHeaderMsg));
   mMessages.emplace_back(std::move(lDataMsg));
 
-  for (auto &lDataIdentMapIter : pStf.mData) {
-    for (auto &lSubSpecMapIter : lDataIdentMapIter.second) {
-      for (auto &lStfDataIter : lSubSpecMapIter.second) {
+  for (auto& lDataIdentMapIter : pStf.mData) {
+    for (auto& lSubSpecMapIter : lDataIdentMapIter.second) {
+      for (auto& lStfDataIter : lSubSpecMapIter.second) {
         mMessages.emplace_back(std::move(lStfDataIter.mHeader));
         mMessages.emplace_back(std::move(lStfDataIter.mData));
       }
@@ -126,7 +123,7 @@ void InterleavedHdrDataSerializer::visit(SubTimeFrame& pStf)
   pStf.mHeader = SubTimeFrame::Header();
 }
 
-void InterleavedHdrDataSerializer::serialize(std::unique_ptr<SubTimeFrame> &&pStf)
+void InterleavedHdrDataSerializer::serialize(std::unique_ptr<SubTimeFrame>&& pStf)
 {
   // cleanup
   auto lCleanup = gsl::finally([this] {
@@ -161,8 +158,8 @@ void InterleavedHdrDataDeserializer::visit(SubTimeFrame& pStf)
   std::memcpy(&pStf.mHeader, mMessages[1]->GetData(), sizeof(SubTimeFrame::Header));
 
   // iterate over all incoming HBFrame data sources
-  for (auto i = 2; i < mMessages.size(); i+=2) {
-    pStf.addStfData({std::move(mMessages[i]), std::move(mMessages[i+1]) });
+  for (auto i = 2; i < mMessages.size(); i += 2) {
+    pStf.addStfData({ std::move(mMessages[i]), std::move(mMessages[i + 1]) });
   }
 }
 
@@ -184,7 +181,7 @@ std::unique_ptr<SubTimeFrame> InterleavedHdrDataDeserializer::deserialize(const 
   return deserialize_impl();
 }
 
-std::unique_ptr<SubTimeFrame> InterleavedHdrDataDeserializer::deserialize(FairMQParts &pMsgs)
+std::unique_ptr<SubTimeFrame> InterleavedHdrDataDeserializer::deserialize(FairMQParts& pMsgs)
 {
   // cleanup
   auto lCleanup = gsl::finally([this] {
@@ -199,28 +196,21 @@ std::unique_ptr<SubTimeFrame> InterleavedHdrDataDeserializer::deserialize(FairMQ
   return deserialize_impl();
 }
 
-
 std::unique_ptr<SubTimeFrame> InterleavedHdrDataDeserializer::deserialize_impl()
 {
   // NOTE: StfID will be updated from the stf header
   std::unique_ptr<SubTimeFrame> lStf = std::make_unique<SubTimeFrame>(0);
-  try
-  {
+  try {
     lStf->accept(*this);
-  }
-  catch (std::runtime_error& e)
-  {
+  } catch (std::runtime_error& e) {
     LOG(ERROR) << "SubTimeFrame deserialization failed. Reason: " << e.what();
     return nullptr; // TODO: what? O2Device.Receive() does not throw...?
-  }
-  catch (std::exception& e)
-  {
+  } catch (std::exception& e) {
     LOG(ERROR) << "SubTimeFrame deserialization failed. Reason: " << e.what();
     return nullptr;
   }
 
   return std::move(lStf);
 }
-
 }
 } /* o2::DataDistribution */

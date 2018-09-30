@@ -22,22 +22,30 @@
 #include <TCanvas.h>
 #include <TH1.h>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 using namespace o2::Base;
 
 static constexpr std::uintptr_t gChanPtrAlign = 8;
 // static constexpr std::uintptr_t gChanPtrAlign = alignof(std::max_align_t);
 
-#define ASSERT(left,operator,right) { if(!((left) operator (right))){ std::cerr << "ASSERT FAILED: " << #left << #operator << #right << " @ " << __FILE__ << " (" << __LINE__ << "). " << #left << "=" << (left) << "; " << #right << "=" << (right) << std::endl; } }
+#define ASSERT(left, operator, right)                                                                                                                                                            \
+  {                                                                                                                                                                                              \
+    if (!((left) operator(right))) {                                                                                                                                                             \
+      std::cerr << "ASSERT FAILED: " << #left << #operator<< #right << " @ " << __FILE__ << " (" << __LINE__ << "). " << #left << "=" <<(left) << "; " << #right << "=" << (right) << std::endl; \
+    }                                                                                                                                                                                            \
+  }
 
 class ChannelAllocator;
 
 template <class T>
-class ChannelPtr {
+class ChannelPtr
+{
   friend class ChannelAllocator;
 
-public:
+ public:
   typedef T element_type;
   typedef T value_type;
   typedef T* pointer;
@@ -56,7 +64,7 @@ public:
   ChannelPtr& operator=(FairMQMessagePtr&& a) noexcept
   {
     const auto lAddr = reinterpret_cast<std::uintptr_t>(a->GetData());
-    ASSERT((lAddr & (gChanPtrAlign-1)), ==, 0);
+    ASSERT((lAddr & (gChanPtrAlign - 1)), ==, 0);
 
     mMessage = std::move(a);
     return *this;
@@ -75,7 +83,7 @@ public:
   pointer get() const noexcept
   {
     const auto lAddr = reinterpret_cast<std::uintptr_t>(mMessage->GetData());
-    ASSERT((lAddr & (gChanPtrAlign-1)), ==, 0);
+    ASSERT((lAddr & (gChanPtrAlign - 1)), ==, 0);
     return reinterpret_cast<pointer>(lAddr);
   }
 
@@ -113,17 +121,16 @@ public:
     return std::exchange(mMessage, nullptr);
   }
 
-
-
-private:
+ private:
   ChannelPtr(FairMQMessagePtr& m) : mMessage(std::move(m))
   {
   }
   FairMQMessagePtr mMessage = nullptr;
 };
 
-class ChannelAllocator {
-public:
+class ChannelAllocator
+{
+ public:
   static ChannelAllocator& get()
   {
     static ChannelAllocator sInstance;
@@ -142,8 +149,7 @@ public:
     const FairMQChannel& lChan = mChannels.at(pChannId);
     FairMQMessagePtr lMessage = std::move(
       // lChan.NewMessage(sizeof(T) + gChanPtrAlign - 1)
-      lChan.NewMessage(sizeof(T))
-    );
+      lChan.NewMessage(sizeof(T)));
 
     ChannelPtr<T> lChanPtr(lMessage);
 
@@ -151,7 +157,7 @@ public:
     return lChanPtr;
   }
 
-private:
+ private:
   ChannelAllocator() = default;
   ChannelAllocator(ChannelAllocator&) = delete;
   ChannelAllocator operator=(ChannelAllocator&) = delete;
@@ -168,14 +174,15 @@ inline ChannelPtr<T> make_channel_ptr(const int pChannId, Args&&... args)
   return lPtr;
 }
 
-
 template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value, T>::type>
-class RunningSamples {
-public:
+class RunningSamples
+{
+ public:
   RunningSamples() = delete;
   RunningSamples(std::size_t pCnt, const T pInitVal = T(0))
-  : mSamples(std::max(pCnt, std::size_t(1)), pInitVal)
-  { }
+    : mSamples(std::max(pCnt, std::size_t(1)), pInitVal)
+  {
+  }
 
   void Fill(const T pNewVal)
   {
@@ -204,28 +211,26 @@ public:
     return mSamples.begin() + mCount;
   }
 
-private:
+ private:
   std::vector<T> mSamples;
   T mSum = T(0);
   std::size_t mIndex = 0;
   std::size_t mCount = 0;
 };
 
-
-class RootGui {
-private:
+class RootGui
+{
+ private:
   TApplication mApp;
   TCanvas mCanvas;
 
-public:
-  RootGui(const std::string &pName, const std::string &pWindowName, const unsigned pW, const unsigned pH)
-  : mApp(pName.c_str(), nullptr, nullptr), mCanvas("cnv", pWindowName.c_str(), pW, pH) { }
+ public:
+  RootGui(const std::string& pName, const std::string& pWindowName, const unsigned pW, const unsigned pH)
+    : mApp(pName.c_str(), nullptr, nullptr), mCanvas("cnv", pWindowName.c_str(), pW, pH) {}
 
   TApplication& App() { return mApp; }
   TCanvas& Canvas() { return mCanvas; }
 };
-
-
 }
 } /* namespace o2::DataDistribution */
 

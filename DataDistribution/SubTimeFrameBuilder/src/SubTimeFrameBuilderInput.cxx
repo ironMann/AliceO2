@@ -8,7 +8,6 @@
 // granted to it by virtue of its status as an Intergovernmental Organization
 // or submit itself to any jurisdiction.
 
-
 #include "SubTimeFrameBuilder/SubTimeFrameBuilderInput.h"
 #include "SubTimeFrameBuilder/SubTimeFrameBuilderDevice.h"
 #include "Common/SubTimeFrameVisitors.h"
@@ -21,9 +20,10 @@
 #include <vector>
 #include <queue>
 
-namespace o2 {
-namespace DataDistribution {
-
+namespace o2
+{
+namespace DataDistribution
+{
 
 void StfInputInterface::Start(unsigned pCnt)
 {
@@ -41,7 +41,7 @@ void StfInputInterface::Start(unsigned pCnt)
 
 void StfInputInterface::Stop()
 {
-  for (auto &lIdThread : mInputThreads)
+  for (auto& lIdThread : mInputThreads)
     lIdThread.join();
 }
 
@@ -55,8 +55,8 @@ void StfInputInterface::DataHandlerThread(const unsigned pInputChannelIdx)
   lReadoutMsgs.reserve(1024);
 
   // Reference to the input channel
-  auto &lInputChan = mDevice.GetChannel(mDevice.getInputChannelName(), pInputChannelIdx);
-  auto &lOutputChan = mDevice.GetChannel(mDevice.getOutputChannelName());
+  auto& lInputChan = mDevice.GetChannel(mDevice.getInputChannelName(), pInputChannelIdx);
+  auto& lOutputChan = mDevice.GetChannel(mDevice.getOutputChannelName());
 
   // Stf builder
   SubTimeFrameReadoutBuilder lStfBuilder(lOutputChan);
@@ -127,6 +127,5 @@ void StfInputInterface::DataHandlerThread(const unsigned pInputChannelIdx)
 
   LOG(INFO) << "Exiting input thread[" << pInputChannelIdx << "]...";
 }
-
 }
 }

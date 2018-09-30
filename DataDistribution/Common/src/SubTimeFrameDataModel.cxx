@@ -15,14 +15,16 @@
 #include <iterator>
 #include <algorithm>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// SubTimeFrame
 ////////////////////////////////////////////////////////////////////////////////
 SubTimeFrame::SubTimeFrame(uint64_t pStfId)
- : mHeader{pStfId}
+  : mHeader{ pStfId }
 {
 }
 
@@ -30,9 +32,9 @@ std::uint64_t SubTimeFrame::getDataSize() const
 {
   std::uint64_t lDataSize = 0;
 
-  for (const auto &lDataIdentMapIter : mData) {
-    for (const auto &lSubSpecMapIter : lDataIdentMapIter.second) {
-      for (const auto &lStfDataIter : lSubSpecMapIter.second) {
+  for (const auto& lDataIdentMapIter : mData) {
+    for (const auto& lSubSpecMapIter : lDataIdentMapIter.second) {
+      for (const auto& lStfDataIter : lSubSpecMapIter.second) {
         lDataSize += lStfDataIter.mData->GetSize();
       }
     }
@@ -45,8 +47,8 @@ std::vector<EquipmentIdentifier> SubTimeFrame::getEquipmentIdentifiers() const
 {
   std::vector<EquipmentIdentifier> lKeys;
 
-  for (const auto &lDataIdentMapIter : mData) {
-    for (const auto &lSubSpecMapIter : lDataIdentMapIter.second) {
+  for (const auto& lDataIdentMapIter : mData) {
+    for (const auto& lSubSpecMapIter : lDataIdentMapIter.second) {
       lKeys.emplace_back(EquipmentIdentifier(lDataIdentMapIter.first, lSubSpecMapIter.first));
     }
   }
@@ -61,10 +63,10 @@ void SubTimeFrame::mergeStf(std::unique_ptr<SubTimeFrame> pStf)
 {
   // make sure data equipment does not repeat
   std::set<EquipmentIdentifier> lUnionSet;
-  for (const auto &lId : getEquipmentIdentifiers())
+  for (const auto& lId : getEquipmentIdentifiers())
     lUnionSet.emplace(lId);
 
-  for (const auto &lId : pStf->getEquipmentIdentifiers()) {
+  for (const auto& lId : pStf->getEquipmentIdentifiers()) {
     if (lUnionSet.emplace(lId).second != true && fixme__EqupId) {
       LOG(WARNING) << "Equipment already present" << lId.info();
       fixme__EqupId = false;
@@ -74,27 +76,25 @@ void SubTimeFrame::mergeStf(std::unique_ptr<SubTimeFrame> pStf)
   }
 
   // merge the Stfs
-  for (auto &lDataIdentMapIter : pStf->mData) {
-    for (auto &lSubSpecMapIter : lDataIdentMapIter.second) {
+  for (auto& lDataIdentMapIter : pStf->mData) {
+    for (auto& lSubSpecMapIter : lDataIdentMapIter.second) {
       // source
-      const DataIdentifier &lDataId = lDataIdentMapIter.first;
-      const DataHeader::SubSpecificationType &lSubSpec = lSubSpecMapIter.first;
-      StfDataVector &lStfDataVec = lSubSpecMapIter.second;
+      const DataIdentifier& lDataId = lDataIdentMapIter.first;
+      const DataHeader::SubSpecificationType& lSubSpec = lSubSpecMapIter.first;
+      StfDataVector& lStfDataVec = lSubSpecMapIter.second;
 
       // destination
-      StfDataVector &lDstStfDataVec = mData[lDataId][lSubSpec];
+      StfDataVector& lDstStfDataVec = mData[lDataId][lSubSpec];
 
       std::move(
         lStfDataVec.begin(),
         lStfDataVec.end(),
-        std::back_inserter(lDstStfDataVec)
-      );
+        std::back_inserter(lDstStfDataVec));
     }
   }
 
   // delete pStf
   pStf.reset();
 }
-
 }
 } /* o2::DataDistribution */

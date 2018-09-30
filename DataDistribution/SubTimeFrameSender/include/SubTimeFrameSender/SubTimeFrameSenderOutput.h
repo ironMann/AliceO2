@@ -18,18 +18,21 @@
 #include <map>
 #include <thread>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 class StfSenderDevice;
 
-class StfSenderOutput {
-public:
-
+class StfSenderOutput
+{
+ public:
   StfSenderOutput() = delete;
-  StfSenderOutput(StfSenderDevice &pStfSenderDev)
-  : mDevice(pStfSenderDev)
-  { }
+  StfSenderOutput(StfSenderDevice& pStfSenderDev)
+    : mDevice(pStfSenderDev)
+  {
+  }
 
   void start(std::uint32_t pCnt);
   void stop();
@@ -39,20 +42,20 @@ public:
   void StfSchedulerThread();
   void DataHandlerThread(const std::uint32_t pEpnIdx);
 
-  void setMaxConcurrentSends(std::int64_t pNumSendSlots) {
-    mNumSendSlots = pNumSendSlots <= 0 ?
-      std::numeric_limits<std::uint64_t>::max() :
-      pNumSendSlots;
+  void setMaxConcurrentSends(std::int64_t pNumSendSlots)
+  {
+    mNumSendSlots = pNumSendSlots <= 0 ? std::numeric_limits<std::uint64_t>::max() : pNumSendSlots;
   }
 
-  void PushStf(const std::uint32_t pEpnIdx, std::unique_ptr<SubTimeFrame> &&pStf) {
+  void PushStf(const std::uint32_t pEpnIdx, std::unique_ptr<SubTimeFrame>&& pStf)
+  {
     assert(pEpnIdx < mStfQueues.size());
     mStfQueues[pEpnIdx].push(std::move(pStf));
   }
 
-private:
+ private:
   /// Ref to the main SubTimeBuilder O2 device
-  StfSenderDevice &mDevice;
+  StfSenderDevice& mDevice;
 
   /// Scheduler threads
   std::thread mSchedulerThread;
@@ -68,7 +71,6 @@ private:
   std::condition_variable mSendSlotCond;
   std::uint64_t mNumSendSlots = std::numeric_limits<std::uint64_t>::max();
 };
-
 }
 } /* namespace o2::DataDistribution */
 

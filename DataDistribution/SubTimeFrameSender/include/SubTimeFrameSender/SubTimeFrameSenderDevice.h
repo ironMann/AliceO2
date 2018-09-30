@@ -22,8 +22,10 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace o2 {
-namespace DataDistribution {
+namespace o2
+{
+namespace DataDistribution
+{
 
 enum StfSenderPipeline {
   eReceiverOut = 0,
@@ -38,11 +40,10 @@ enum StfSenderPipeline {
   eInvalidStage = -1,
 };
 
-class StfSenderDevice :
-  public Base::O2Device,
-  public IFifoPipeline<std::unique_ptr<SubTimeFrame>>
+class StfSenderDevice : public Base::O2Device,
+                        public IFifoPipeline<std::unique_ptr<SubTimeFrame>>
 {
-public:
+ public:
   static constexpr const char* OptionKeyInputChannelName = "input-channel-name";
   static constexpr const char* OptionKeyStandalone = "stand-alone";
   static constexpr const char* OptionKeyMaxBufferedStfs = "max-buffered-stfs";
@@ -67,19 +68,19 @@ public:
   bool standalone() const { return mStandalone; }
   std::uint32_t getEpnNodeCount() const { return mEpnNodeCount; }
 
-protected:
+ protected:
   void PreRun() final;
   void PostRun() final;
   bool ConditionalRun() final;
 
   void StfReceiverThread();
 
-  unsigned getNextPipelineStage(unsigned pStage) final {
+  unsigned getNextPipelineStage(unsigned pStage) final
+  {
     StfSenderPipeline lNextStage = eInvalidStage;
 
-    switch(pStage) {
-      case eReceiverOut:
-      {
+    switch (pStage) {
+      case eReceiverOut: {
         auto lNumStfs = stfCountIncFetch();
         if (mPipelineLimit && (lNumStfs > mMaxStfsInPipeline)) {
           stfCountDecFetch();
@@ -109,7 +110,7 @@ protected:
   std::uint32_t mMaxConcurrentSends;
   bool mPipelineLimit;
 
-   /// Receiver threads
+  /// Receiver threads
   std::thread mReceiverThread;
 
   /// File sink
@@ -118,11 +119,9 @@ protected:
   /// Output stage handler
   StfSenderOutput mOutputHandler;
 
-
   /// number of STFs in the process
-  std::atomic_uint64_t mNumStfs{0};
+  std::atomic_uint64_t mNumStfs{ 0 };
 };
-
 }
 } /* namespace o2::DataDistribution */
 

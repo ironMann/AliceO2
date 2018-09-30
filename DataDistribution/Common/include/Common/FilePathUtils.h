@@ -11,25 +11,22 @@
 #ifndef FILE_PATH_UTILS_H_
 #define FILE_PATH_UTILS_H_
 
-namespace o2 {
-namespace DataDistribution {
-
+namespace o2
+{
+namespace DataDistribution
+{
 
 ////////////////////////////////////////////////////////////////////////////////
 /// FilePathUtils class
 ////////////////////////////////////////////////////////////////////////////////
 
-class FilePathUtils {
-public:
+class FilePathUtils
+{
+ public:
   FilePathUtils() = delete;
 
-
-  static std::string getNextSeqName(const std::string &pRoot);
-
-
+  static std::string getNextSeqName(const std::string& pRoot);
 };
-
-
 }
 } /* o2::DataDistribution */
 
