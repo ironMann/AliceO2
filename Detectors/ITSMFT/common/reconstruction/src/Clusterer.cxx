@@ -60,54 +60,34 @@ void Clusterer::process(int nThreads, PixelReader& reader, FullClusCont* fullClu
       break; // just 1 ROF was asked to be processed
     }
 
-    if (nFired < nThreads) {
-      nThreads = nFired;
-    }
-    int nLoops = nThreads;
 #ifdef WITH_OPENMP
     if (nThreads > 0) {
       omp_set_num_threads(nThreads);
-    } else {
-      nThreads = omp_get_num_threads(); // RSTODO I guess the system may decide to provide less threads than asked?
+      // nThreads = omp_get_num_threads(); // RSTODO I guess the system may decide to provide less threads than asked?
     }
-    nLoops = nThreads == 1 ? 1 : std::min(nFired, LoopPerThread * nThreads);
-    std::vector<int> loopLim;
-    loopLim.reserve(nLoops + nLoops);
-    loopLim.push_back(0);
-    // decide actual workshare between the threads, trying to process the same number of pixels in each
-    size_t nAvPixPerLoop = nPix / nLoops, smt = 0;
-    for (int i = 0; i < nFired; i++) {
-      smt += mFiredChipsPtr[i]->getData().size();
-      if (smt >= nAvPixPerLoop) { // define threads boundary
-        loopLim.push_back(i);
-        smt = 0;
-      }
-    }
-    if (loopLim.back() != nFired) {
-      loopLim.push_back(nFired);
-    }
-    nLoops = loopLim.size() - 1;
-    if (nThreads > nLoops) { // this should not happen
-      omp_set_num_threads(nLoops);
-    }
+
 #else
-    nThreads = nLoops = 1;
-    std::vector<int> loopLim{0, nFired};
+    nThreads = 1;
 #endif
-    if (nLoops > mThreads.size()) {
-      int oldSz = mThreads.size();
-      mThreads.resize(nLoops);
-      for (int i = oldSz; i < nLoops; i++) {
-        mThreads[i] = std::make_unique<ClustererThread>(this);
-      }
+
+    mThreads.resize(nThreads);
+    for (int i = 0; i < nThreads; i++) {
+      mThreads[i] = std::make_unique<ClustererThread>(this);
     }
+
 #ifdef WITH_OPENMP
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, 4) // this could be tuned
 #endif
     //>> start of MT region
-    for (int ith = 0; ith < nLoops; ith++) { // each loop is done by a separate thread
-      auto chips = gsl::span(&mFiredChipsPtr[loopLim[ith]], loopLim[ith + 1] - loopLim[ith]);
-      if (!ith) { // the 1st thread can write directly to the final destination
+    for (std::size_t ichip = 0; ichip < mFiredChipsPtr.size(); ichip++) {
+
+      // only a single mFiredChipsPtr element per iteration
+      auto chips = gsl::span(&mFiredChipsPtr[ichip], 1);
+
+      // get the current thread id
+      const auto ith = omp_get_thread_num(); // this returns 0 if not in parallel region (and the first thread)
+
+      if (ith == 0) { // the 1st thread can write directly to the final destination
         mThreads[ith]->process(chips, fullClus, compClus, patterns, labelsCl ? reader.getDigitsMCTruth() : nullptr, labelsCl, rof);
       } else { // extra threads will store in their own containers
         mThreads[ith]->process(chips,
@@ -121,12 +101,12 @@ void Clusterer::process(int nThreads, PixelReader& reader, FullClusCont* fullClu
     //<< end of MT region
 
     // copy data of all threads but the 1st one to final destination
-    if (nLoops > 1) {
+    if (nThreads > 1) {
 #ifdef _PERFORM_TIMING_
       mTimerMerge.Start(false);
 #endif
       size_t nClTot = compClus->size(), nPattTot = patterns ? patterns->size() : 0;
-      for (int ith = 1; ith < nLoops; ith++) {
+      for (int ith = 1; ith < nThreads; ith++) {
         nClTot += mThreads[ith]->compClusters.size();
         nPattTot += mThreads[ith]->patterns.size();
       }
@@ -137,7 +117,7 @@ void Clusterer::process(int nThreads, PixelReader& reader, FullClusCont* fullClu
       if (patterns) {
         patterns->reserve(nPattTot);
       }
-      for (int ith = 1; ith < nLoops; ith++) {
+      for (int ith = 1; ith < nThreads; ith++) {
         compClus->insert(compClus->end(), mThreads[ith]->compClusters.begin(), mThreads[ith]->compClusters.end());
         mThreads[ith]->compClusters.clear();
 
